@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Tag Manager - AI绘图标签管理器</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🎨</span>
+                <h1>AI Tag Manager</h1>
+            </div>
+            <p class="subtitle">AI绘图标签管理器</p>
+            <div class="header-nav">
+                <button class="btn btn-nav btn-settings" onclick="openSettingsModal()" title="设置">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </button>
+                <a href="/gallery" class="btn btn-nav">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    作品画廊
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel - Tag Library -->
+            <section class="panel tag-library">
+                <div class="panel-header">
+                    <h2>标签库 / Tag Library</h2>
+                    <div class="panel-header-actions">
+                        <button class="btn btn-secondary btn-import" onclick="openImportModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            一键导入
+                        </button>
+                        <button class="btn btn-primary btn-add-tag" onclick="openAddTagModal()">
+                            <span>+</span> 添加标签
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Category Filter -->
+                <div class="category-filter">
+                    <button class="category-btn active" data-category="all">全部 All</button>
+                </div>
+
+                <!-- Tags Grid -->
+                <div class="tags-container" id="tagsContainer">
+                    <!-- Tags will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Right Panel - Selected Tags & Prompt -->
+            <section class="panel prompt-panel">
+                <div class="panel-header">
+                    <h2>已选标签 / Selected Tags</h2>
+                    <button class="btn btn-secondary" onclick="clearSelected()">清空</button>
+                </div>
+
+                <!-- Selected Tags -->
+                <div class="selected-tags" id="selectedTags">
+                    <p class="empty-hint">点击左侧标签添加到这里</p>
+                </div>
+
+                <!-- Prompt Output -->
+                <div class="prompt-section">
+                    <div class="prompt-header">
+                        <h3>生成的 Prompt</h3>
+                        <div class="prompt-actions">
+                            <button class="btn btn-icon" onclick="copyPrompt()" title="复制">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="prompt-output" id="promptOutput">
+                        <span class="placeholder">选择标签后生成 Prompt...</span>
+                    </div>
+                </div>
+
+                <!-- Weight Syntax Options -->
+                <div class="options-section">
+                    <h4>权重格式 / Weight Format</h4>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="weightFormat" value="sd" checked>
+                            <span>SD格式 (tag:1.2)</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="weightFormat" value="nai">
+                            <span>NAI格式 {tag}</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="weightFormat" value="plain">
+                            <span>纯文本</span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Category Management -->
+        <section class="panel category-panel">
+            <div class="panel-header">
+                <h2>分类管理 / Category Management</h2>
+                <button class="btn btn-primary" onclick="openAddCategoryModal()">
+                    <span>+</span> 添加分类
+                </button>
+            </div>
+            <div class="categories-list" id="categoriesList">
+                <!-- Categories will be loaded here -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Add Tag Modal -->
+    <div class="modal" id="addTagModal">
+        <div class="modal-overlay" onclick="closeModal('addTagModal')"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>添加新标签 / Add New Tag</h3>
+                <button class="btn-close" onclick="closeModal('addTagModal')">&times;</button>
+            </div>
+            <form id="addTagForm" onsubmit="submitAddTag(event)">
+                <div class="form-group">
+                    <label>英文名称 / English Name</label>
+                    <input type="text" name="name_en" required placeholder="e.g., masterpiece">
+                </div>
+                <div class="form-group">
+                    <label>中文名称 / Chinese Name</label>
+                    <input type="text" name="name_zh" required placeholder="例如：杰作">
+                </div>
+                <div class="form-group">
+                    <label>分类 / Category</label>
+                    <div id="categoryDisplay" class="category-display" style="display: none;"></div>
+                    <div id="categorySelectGroup">
+                        <select name="category_id" id="tagCategorySelect" required>
+                            <!-- Options loaded dynamically -->
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>权重 / Weight (0.1 - 2.0)</label>
+                    <input type="number" name="weight" value="1.0" min="0.1" max="2.0" step="0.1">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addTagModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div class="modal" id="addCategoryModal">
+        <div class="modal-overlay" onclick="closeModal('addCategoryModal')"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>添加新分类 / Add New Category</h3>
+                <button class="btn-close" onclick="closeModal('addCategoryModal')">&times;</button>
+            </div>
+            <form id="addCategoryForm" onsubmit="submitAddCategory(event)">
+                <div class="form-group">
+                    <label>英文名称 / English Name</label>
+                    <input type="text" name="name_en" required placeholder="e.g., Quality">
+                </div>
+                <div class="form-group">
+                    <label>中文名称 / Chinese Name</label>
+                    <input type="text" name="name_zh" required placeholder="例如：质量">
+                </div>
+                <div class="form-group">
+                    <label>颜色 / Color</label>
+                    <input type="color" name="color" value="#6366f1">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addCategoryModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Category Modal -->
+    <div class="modal" id="editCategoryModal">
+        <div class="modal-overlay" onclick="closeModal('editCategoryModal')"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>编辑分类 / Edit Category</h3>
+                <button class="btn-close" onclick="closeModal('editCategoryModal')">&times;</button>
+            </div>
+            <form id="editCategoryForm" onsubmit="submitEditCategory(event)">
+                <input type="hidden" name="id" id="editCategoryId">
+                <div class="form-group">
+                    <label>英文名称 / English Name</label>
+                    <input type="text" name="name_en" id="editCategoryNameEn" required>
+                </div>
+                <div class="form-group">
+                    <label>中文名称 / Chinese Name</label>
+                    <input type="text" name="name_zh" id="editCategoryNameZh" required>
+                </div>
+                <div class="form-group">
+                    <label>颜色 / Color</label>
+                    <input type="color" name="color" id="editCategoryColor">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-danger" onclick="deleteCurrentCategory()">删除</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editCategoryModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Tag Modal -->
+    <div class="modal" id="editTagModal">
+        <div class="modal-overlay" onclick="closeModal('editTagModal')"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>编辑标签 / Edit Tag</h3>
+                <button class="btn-close" onclick="closeModal('editTagModal')">&times;</button>
+            </div>
+            <form id="editTagForm" onsubmit="submitEditTag(event)">
+                <input type="hidden" name="id" id="editTagId">
+                <div class="form-group">
+                    <label>英文名称 / English Name</label>
+                    <input type="text" name="name_en" id="editNameEn" required>
+                </div>
+                <div class="form-group">
+                    <label>中文名称 / Chinese Name</label>
+                    <input type="text" name="name_zh" id="editNameZh" required>
+                </div>
+                <div class="form-group">
+                    <label>分类 / Category</label>
+                    <select name="category_id" id="editTagCategorySelect" required>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>权重 / Weight</label>
+                    <input type="number" name="weight" id="editWeight" min="0.1" max="2.0" step="0.1">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-danger" onclick="deleteCurrentTag()">删除</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editTagModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Import Tags Modal -->
+    <div class="modal" id="importTagsModal">
+        <div class="modal-overlay" onclick="closeModal('importTagsModal')"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>一键导入标签 / Batch Import Tags</h3>
+                <button class="btn-close" onclick="closeModal('importTagsModal')">&times;</button>
+            </div>
+            <div class="import-container">
+                <!-- Step 1: Input -->
+                <div id="importStep1" class="import-step">
+                    <div class="form-group">
+                        <label>粘贴标签 / Paste Tags</label>
+                        <p class="form-hint">支持逗号、换行分隔，自动解析 SD/NAI 格式的权重语法</p>
+                        <textarea id="importInput" rows="6" placeholder="masterpiece, best quality, 1girl, long hair, blue eyes&#10;或者&#10;(masterpiece:1.2), {best quality}, anime style"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>默认分类 / Default Category</label>
+                        <select id="importDefaultCategory">
+                            <!-- Options loaded dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('importTagsModal')">取消</button>
+                        <button type="button" class="btn btn-primary" onclick="parseImportTags()" id="parseBtn">
+                            <span class="btn-text">解析并翻译</span>
+                            <span class="btn-loading" style="display:none;">处理中...</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Preview and Edit -->
+                <div id="importStep2" class="import-step" style="display:none;">
+                    <div class="import-summary">
+                        <span id="importSummary">共解析 0 个标签，其中 0 个为新标签</span>
+                    </div>
+                    <div class="import-preview-container">
+                        <div class="import-preview-header">
+                            <span class="preview-col">标签 Tag</span>
+                            <span class="preview-col">翻译 Translation</span>
+                            <span class="preview-col">分类 Category</span>
+                            <span class="preview-col">操作</span>
+                        </div>
+                        <div class="import-preview-list" id="importPreviewList">
+                            <!-- Preview items will be rendered here -->
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="backToImportStep1()">返回修改</button>
+                        <button type="button" class="btn btn-primary" onclick="confirmImport()" id="importBtn">
+                            <span class="btn-text">确认导入</span>
+                            <span class="btn-loading" style="display:none;">导入中...</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-overlay" onclick="closeModal('settingsModal')"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>设置 / Settings</h3>
+                <button class="btn-close" onclick="closeModal('settingsModal')">&times;</button>
+            </div>
+            <form id="settingsForm" onsubmit="submitSettings(event)">
+                <div class="form-body">
+                    <div class="settings-section">
+                        <h4 class="settings-section-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            大模型服务 / LLM Service
+                        </h4>
+                        <p class="settings-hint">配置后将优先使用大模型进行翻译和分类匹配，获得更准确的结果</p>
+
+                        <div class="form-group">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="llmEnabled" name="llm_enabled">
+                                <span class="toggle-switch"></span>
+                                <span class="toggle-text">启用大模型服务</span>
+                            </label>
+                        </div>
+
+                        <div id="llmSettings" class="llm-settings">
+                            <div class="form-group">
+                                <label>API 地址 / Base URL</label>
+                                <input type="text" id="llmBaseUrl" name="base_url"
+                                       placeholder="https://api.openai.com/v1">
+                                <p class="form-hint">支持 OpenAI 兼容格式的 API（如 Azure OpenAI、本地 Ollama 等）</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label>API 密钥 / API Key</label>
+                                <div class="input-with-action">
+                                    <input type="password" id="llmApiKey" name="api_key"
+                                           placeholder="sk-...">
+                                    <button type="button" class="btn btn-icon" onclick="toggleApiKeyVisibility()" title="显示/隐藏">
+                                        <svg id="apiKeyEyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <p class="form-hint" id="apiKeyStatus"></p>
+                            </div>
+
+                            <div class="form-group">
+                                <label>模型名称 / Model</label>
+                                <input type="text" id="llmModel" name="model"
+                                       placeholder="gpt-3.5-turbo">
+                                <p class="form-hint">如 gpt-3.5-turbo, gpt-4, claude-3-haiku 等</p>
+                            </div>
+
+                            <div class="form-group">
+                                <button type="button" class="btn btn-secondary" onclick="testLLMConnection()" id="testLLMBtn">
+                                    <span class="btn-text">测试连接</span>
+                                    <span class="btn-loading" style="display:none;">测试中...</span>
+                                </button>
+                                <span id="testResult" class="test-result"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('settingsModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">保存设置</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

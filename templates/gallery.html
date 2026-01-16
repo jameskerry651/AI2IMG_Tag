@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作品画廊 / Gallery - AI Tag Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <a href="/" class="back-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    返回主页
+                </a>
+            </div>
+            <div class="logo">
+                <span class="logo-icon">🖼️</span>
+                <h1>作品画廊 / Gallery</h1>
+            </div>
+            <div class="header-right"></div>
+        </header>
+
+        <!-- Gallery Section -->
+        <section class="panel gallery-panel gallery-page">
+            <div class="panel-header">
+                <h2>全部作品 / All Artworks</h2>
+                <button class="btn btn-primary" onclick="openAddGalleryModal()">
+                    <span>+</span> 上传作品
+                </button>
+            </div>
+            <div class="gallery-grid" id="galleryGrid">
+                <p class="empty-hint">暂无作品，点击上方按钮上传</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Add Gallery Modal -->
+    <div class="modal" id="addGalleryModal">
+        <div class="modal-overlay" onclick="closeModal('addGalleryModal')"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>上传作品 / Upload Artwork</h3>
+                <button class="btn-close" onclick="closeModal('addGalleryModal')">&times;</button>
+            </div>
+            <form id="addGalleryForm" onsubmit="submitAddGallery(event)">
+                <div class="form-body">
+                    <div class="form-group">
+                        <label>图片 / Image</label>
+                        <div class="upload-area" id="uploadArea" onclick="document.getElementById('galleryImageInput').click()">
+                            <div class="upload-placeholder" id="uploadPlaceholder">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <p>点击或拖拽上传图片</p>
+                                <span>支持 PNG, JPG, GIF, WebP (最大 16MB)</span>
+                            </div>
+                            <img id="uploadPreview" class="upload-preview" style="display: none;">
+                        </div>
+                        <input type="file" id="galleryImageInput" name="image" accept="image/*" required style="display: none;" onchange="previewImage(this, 'uploadPreview', 'uploadPlaceholder')">
+                    </div>
+                    <div class="form-group">
+                        <label>标题 / Title</label>
+                        <input type="text" name="title" placeholder="给作品起个名字...">
+                    </div>
+                    <div class="form-group">
+                        <label>正向提示词 / Positive Prompt</label>
+                        <textarea name="positive_prompt" rows="4" placeholder="masterpiece, best quality, ..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>负向提示词 / Negative Prompt</label>
+                        <textarea name="negative_prompt" rows="3" placeholder="lowres, bad anatomy, ..."></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addGalleryModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">上传</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Gallery Modal -->
+    <div class="modal" id="editGalleryModal">
+        <div class="modal-overlay" onclick="closeModal('editGalleryModal')"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>编辑作品 / Edit Artwork</h3>
+                <button class="btn-close" onclick="closeModal('editGalleryModal')">&times;</button>
+            </div>
+            <form id="editGalleryForm" onsubmit="submitEditGallery(event)">
+                <input type="hidden" id="editGalleryId">
+                <div class="form-body">
+                    <div class="form-group">
+                        <label>图片 / Image</label>
+                        <div class="upload-area" onclick="document.getElementById('editGalleryImageInput').click()">
+                            <img id="editGalleryPreview" class="upload-preview">
+                            <div class="upload-overlay">
+                                <span>点击更换图片</span>
+                            </div>
+                        </div>
+                        <input type="file" id="editGalleryImageInput" name="image" accept="image/*" style="display: none;" onchange="previewImage(this, 'editGalleryPreview', null)">
+                    </div>
+                    <div class="form-group">
+                        <label>标题 / Title</label>
+                        <input type="text" name="title" id="editGalleryTitle" placeholder="给作品起个名字...">
+                    </div>
+                    <div class="form-group">
+                        <label>正向提示词 / Positive Prompt</label>
+                        <textarea name="positive_prompt" id="editGalleryPositive" rows="4" placeholder="masterpiece, best quality, ..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>负向提示词 / Negative Prompt</label>
+                        <textarea name="negative_prompt" id="editGalleryNegative" rows="3" placeholder="lowres, bad anatomy, ..."></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-danger" onclick="deleteGalleryItem()">删除</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editGalleryModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Gallery View Modal -->
+    <div class="modal" id="viewGalleryModal">
+        <div class="modal-overlay" onclick="closeModal('viewGalleryModal')"></div>
+        <div class="modal-content modal-view">
+            <button class="btn-close modal-close-float" onclick="closeModal('viewGalleryModal')">&times;</button>
+            <div class="gallery-view-container">
+                <div class="gallery-view-image">
+                    <img id="viewGalleryImage" src="" alt="">
+                </div>
+                <div class="gallery-view-info">
+                    <h3 id="viewGalleryTitle">作品标题</h3>
+                    <div class="prompt-block">
+                        <div class="prompt-block-header">
+                            <span>正向提示词 / Positive</span>
+                            <button class="btn btn-icon btn-sm" onclick="copyText('viewPositivePrompt')" title="复制">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <p id="viewPositivePrompt" class="prompt-text"></p>
+                    </div>
+                    <div class="prompt-block">
+                        <div class="prompt-block-header">
+                            <span>负向提示词 / Negative</span>
+                            <button class="btn btn-icon btn-sm" onclick="copyText('viewNegativePrompt')" title="复制">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <p id="viewNegativePrompt" class="prompt-text"></p>
+                    </div>
+                    <div class="gallery-view-actions">
+                        <button class="btn btn-secondary" onclick="closeModal('viewGalleryModal'); openEditGalleryModal(currentViewingItem.id)">
+                            编辑
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script src="{{ url_for('static', filename='gallery.js') }}"></script>
+</body>
+</html>
