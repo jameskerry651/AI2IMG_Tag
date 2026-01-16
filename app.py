@@ -837,5 +837,81 @@ def test_llm_connection():
         return jsonify({"success": False, "error": error_msg}), 400
 
 
+@app.route('/api/tags/analyze-relevance', methods=['POST'])
+def analyze_tag_relevance():
+    """Analyze relevance of tags to a specific category using LLM"""
+    if not is_llm_configured():
+        return jsonify({"success": False, "error": "LLM 服务未配置，请先在设置中配置"}), 400
+
+    data = request.json
+    tags_list = data.get('tags', [])
+    category = data.get('category', {})
+
+    if not tags_list or not category:
+        return jsonify({"success": False, "error": "缺少必要参数"}), 400
+
+    # Build the prompt
+    tags_text = "\n".join([f"- {tag['name_en']} ({tag.get('name_zh', '')})" for tag in tags_list])
+
+    prompt = f"""You are an AI art tag categorization expert. Analyze which tags are related to the category "{category.get('name_en', '')} / {category.get('name_zh', '')}".
+
+Category description: Tags that belong to or are strongly associated with {category.get('name_en', '')} category in AI art generation.
+
+Tags to analyze:
+{tags_text}
+
+Return ONLY a JSON array containing the English names of tags that are related to this category. Be selective - only include tags that clearly belong to or are strongly associated with this category.
+
+For example, if the category is "Hair", return tags about hair color, hairstyle, hair length, etc.
+If the category is "Scene/Background", return tags about locations, environments, weather, time of day, etc.
+
+Return format (JSON array only, no other text):
+["tag1", "tag2", "tag3"]
+
+If no tags are related to this category, return an empty array: []"""
+
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant that specializes in AI art generation terminology. You always respond with valid JSON only."},
+        {"role": "user", "content": prompt}
+    ]
+
+    result = call_llm_api(messages)
+
+    if result and result.get('success'):
+        try:
+            # Parse the response
+            json_str = result['content'].strip()
+            # Handle markdown code blocks
+            if json_str.startswith('```'):
+                lines = json_str.split('\n')
+                json_lines = []
+                in_code = False
+                for line in lines:
+                    if line.startswith('```'):
+                        in_code = not in_code
+                        continue
+                    if in_code or not line.startswith('```'):
+                        json_lines.append(line)
+                json_str = '\n'.join(json_lines)
+
+            relevant_tags = json.loads(json_str)
+
+            if not isinstance(relevant_tags, list):
+                relevant_tags = []
+
+            return jsonify({
+                "success": True,
+                "relevant_tags": relevant_tags,
+                "category": category.get('name_en', '')
+            })
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse LLM response: {e}")
+            print(f"Response was: {result.get('content', '')}")
+            return jsonify({"success": False, "error": "解析 AI 响应失败"}), 500
+    else:
+        error_msg = result.get('error', '分析失败') if result else '分析失败'
+        return jsonify({"success": False, "error": error_msg}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

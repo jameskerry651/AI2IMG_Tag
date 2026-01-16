@@ -76,7 +76,7 @@
 
                 <!-- Selected Tags -->
                 <div class="selected-tags" id="selectedTags">
-                    <p class="empty-hint">点击左侧标签添加到这里</p>
+                    <p class="empty-hint">点击左侧标签添加到这里<br><small style="color: var(--text-muted);">左键点击设为插入点，右键点击移除</small></p>
                 </div>
 
                 <!-- Prompt Output -->
@@ -84,6 +84,12 @@
                     <div class="prompt-header">
                         <h3>生成的 Prompt</h3>
                         <div class="prompt-actions">
+                            <button class="btn btn-icon" onclick="openPromptEditor()" title="编辑">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
                             <button class="btn btn-icon" onclick="copyPrompt()" title="复制">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -398,6 +404,140 @@
                     <button type="submit" class="btn btn-primary">保存设置</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Prompt Editor Modal -->
+    <div class="modal" id="promptEditorModal">
+        <div class="modal-overlay" onclick="closeModal('promptEditorModal')"></div>
+        <div class="modal-content modal-xlarge">
+            <div class="modal-header">
+                <h3>Prompt 编辑器</h3>
+                <button class="btn-close" onclick="closeModal('promptEditorModal')">&times;</button>
+            </div>
+            <div class="prompt-editor-container">
+                <!-- Input Section -->
+                <div class="editor-section">
+                    <div class="editor-section-header">
+                        <h4>Prompt 输入</h4>
+                        <div class="editor-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="loadSelectedTagsToEditor()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                从已选标签加载
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="promptEditorInput" rows="4" placeholder="在这里粘贴 Prompt，支持 SD/NAI 格式..."></textarea>
+                    <div class="parse-buttons">
+                        <button class="btn btn-secondary" onclick="localMatchTags()" id="localMatchBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <span class="btn-text">本地匹配</span>
+                            <span class="btn-loading" style="display:none;">匹配中...</span>
+                        </button>
+                        <button class="btn btn-primary" onclick="smartParseTags()" id="smartParseBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                            </svg>
+                            <span class="btn-text">AI 智能解析</span>
+                            <span class="btn-loading" style="display:none;">解析中...</span>
+                        </button>
+                    </div>
+                    <p class="parse-hint">本地匹配：从已有标签库中匹配，速度快 | AI 智能解析：调用大模型翻译和分类，更准确</p>
+                </div>
+
+                <!-- Parsed Tags Section -->
+                <div class="editor-section" id="editorTagsSection" style="display: none;">
+                    <div class="editor-section-header">
+                        <h4>已解析标签 <span class="tags-count-badge" id="editorTagsCount">0</span></h4>
+                        <div class="editor-tag-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="selectAllEditorTags()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 11 12 14 22 4"></polyline>
+                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                </svg>
+                                全选
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="deselectAllEditorTags()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                </svg>
+                                取消全选
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="removeSelectedEditorTags()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                                移除选中
+                            </button>
+                        </div>
+                    </div>
+                    <div class="editor-tags-container" id="editorTagsContainer">
+                        <!-- Tags will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="editor-section" id="filterSection" style="display: none;">
+                    <div class="editor-section-header">
+                        <h4>标签筛选</h4>
+                    </div>
+                    <div class="filter-options">
+                        <!-- 普通筛选 -->
+                        <div class="filter-row">
+                            <label>按类别筛选:</label>
+                            <select id="normalFilterCategory">
+                                <!-- Options loaded dynamically -->
+                            </select>
+                            <button class="btn btn-secondary" onclick="normalFilterByCategory()" id="normalFilterBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                                </svg>
+                                <span>普通筛选</span>
+                            </button>
+                        </div>
+                        <p class="filter-hint">根据标签已有的分类信息进行筛选，速度快</p>
+
+                        <div class="filter-divider"></div>
+
+                        <!-- AI 智能筛选 -->
+                        <div class="filter-row">
+                            <label>AI 智能筛选:</label>
+                            <select id="smartSelectCategory">
+                                <!-- Options loaded dynamically -->
+                            </select>
+                            <button class="btn btn-primary" onclick="smartSelectByCategory()" id="smartSelectBtn">
+                                <span class="btn-text">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                    </svg>
+                                    AI 智能筛选
+                                </span>
+                                <span class="btn-loading" style="display:none;">分析中...</span>
+                            </button>
+                        </div>
+                        <p class="filter-hint">AI 分析每个标签与类别的语义相关性，更准确但需要调用大模型服务</p>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('promptEditorModal')">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="applyEditorChanges()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        应用更改
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -4,6 +4,7 @@ let categories = [];
 let selectedTags = [];
 let currentFilter = 'all';
 let parsedImportTags = []; // For batch import
+let insertAfterIndex = -1; // 插入位置：-1 表示末尾，其他值表示在该索引后插入
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -105,9 +106,23 @@ function toggleTag(tagId) {
 
     const index = selectedTags.findIndex(t => t.id === tagId);
     if (index > -1) {
+        // 如果已选中，则移除
         selectedTags.splice(index, 1);
+        // 如果移除的位置在插入点之前或就是插入点，调整插入点
+        if (insertAfterIndex >= index) {
+            insertAfterIndex = Math.max(-1, insertAfterIndex - 1);
+        }
     } else {
-        selectedTags.push(tag);
+        // 添加标签到指定位置
+        if (insertAfterIndex >= 0 && insertAfterIndex < selectedTags.length) {
+            // 插入到指定位置后面
+            selectedTags.splice(insertAfterIndex + 1, 0, tag);
+            insertAfterIndex++; // 移动插入点到新添加的标签
+        } else {
+            // 添加到末尾
+            selectedTags.push(tag);
+            insertAfterIndex = selectedTags.length - 1;
+        }
     }
 
     renderTags();
@@ -121,30 +136,77 @@ function renderSelectedTags() {
 
     if (selectedTags.length === 0) {
         container.innerHTML = '<p class="empty-hint">点击左侧标签添加到这里</p>';
+        insertAfterIndex = -1;
         return;
     }
 
-    container.innerHTML = selectedTags.map(tag => {
+    container.innerHTML = selectedTags.map((tag, index) => {
         const category = categories.find(c => c.id === tag.category_id);
         const catColor = category ? category.color : '#6366f1';
+        const isInsertPoint = index === insertAfterIndex;
 
         return `
-            <div class="tag-item"
+            <div class="tag-item ${isInsertPoint ? 'insert-point' : ''}"
                  data-id="${tag.id}"
-                 onclick="removeSelectedTag('${tag.id}')"
-                 title="点击移除">
+                 data-index="${index}"
+                 onclick="handleSelectedTagClick(event, '${tag.id}', ${index})"
+                 title="左键点击设为插入点，右键点击移除">
                 <span class="tag-en">${tag.name_en}</span>
                 <span class="tag-zh">${tag.name_zh}</span>
                 ${tag.weight && tag.weight !== 1 ? `<span class="tag-weight">${tag.weight}</span>` : ''}
                 <span class="tag-category-dot" style="background: ${catColor}"></span>
+                ${isInsertPoint ? '<span class="insert-indicator">▼</span>' : ''}
             </div>
         `;
     }).join('');
+
+    // 添加右键菜单事件
+    container.querySelectorAll('.tag-item').forEach(item => {
+        item.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const tagId = item.dataset.id;
+            removeSelectedTag(tagId);
+        });
+    });
+}
+
+// 处理已选标签点击
+function handleSelectedTagClick(event, tagId, index) {
+    event.stopPropagation();
+
+    // 左键点击设为插入点
+    if (event.button === 0) {
+        setInsertPoint(index);
+    }
+}
+
+// 设置插入点
+function setInsertPoint(index) {
+    if (insertAfterIndex === index) {
+        // 如果点击的是当前插入点，取消选中（设为末尾）
+        insertAfterIndex = selectedTags.length - 1;
+    } else {
+        insertAfterIndex = index;
+    }
+    renderSelectedTags();
 }
 
 // Remove Selected Tag
 function removeSelectedTag(tagId) {
-    selectedTags = selectedTags.filter(t => t.id !== tagId);
+    const index = selectedTags.findIndex(t => t.id === tagId);
+    if (index > -1) {
+        selectedTags.splice(index, 1);
+        // 调整插入点
+        if (insertAfterIndex >= index) {
+            insertAfterIndex = Math.max(-1, insertAfterIndex - 1);
+        }
+        // 如果删除后列表为空或插入点超出范围
+        if (selectedTags.length === 0) {
+            insertAfterIndex = -1;
+        } else if (insertAfterIndex >= selectedTags.length) {
+            insertAfterIndex = selectedTags.length - 1;
+        }
+    }
     renderTags();
     renderSelectedTags();
     generatePrompt();
@@ -153,6 +215,7 @@ function removeSelectedTag(tagId) {
 // Clear All Selected Tags
 function clearSelected() {
     selectedTags = [];
+    insertAfterIndex = -1;
     renderTags();
     renderSelectedTags();
     generatePrompt();
@@ -867,4 +930,422 @@ async function submitSettings(event) {
         showToast('保存请求失败', 'error');
         console.error(error);
     }
+}
+
+
+// ============ Prompt Editor Functions ============
+
+let editorTags = []; // Tags in the editor
+
+function openPromptEditor() {
+    // Reset state
+    editorTags = [];
+    document.getElementById('promptEditorInput').value = '';
+    document.getElementById('editorTagsSection').style.display = 'none';
+    document.getElementById('filterSection').style.display = 'none';
+
+    // If there are selected tags, auto-load them
+    if (selectedTags.length > 0) {
+        loadSelectedTagsToEditor();
+    }
+
+    openModal('promptEditorModal');
+}
+
+function loadSelectedTagsToEditor() {
+    if (selectedTags.length === 0) {
+        showToast('没有已选标签', 'error');
+        return;
+    }
+
+    // Generate prompt from selected tags
+    const format = document.querySelector('input[name="weightFormat"]:checked').value;
+    const promptParts = selectedTags.map(tag => {
+        const weight = tag.weight || 1;
+        if (format === 'sd' && weight !== 1) {
+            return `(${tag.name_en}:${weight})`;
+        }
+        return tag.name_en;
+    });
+
+    document.getElementById('promptEditorInput').value = promptParts.join(', ');
+
+    // Convert selected tags to editor tags
+    editorTags = selectedTags.map(tag => ({
+        ...tag,
+        checked: false,
+        fromLibrary: true // Mark as from library
+    }));
+
+    renderEditorTags();
+}
+
+// 本地匹配解析 - 从已有标签库中匹配，不调用 LLM
+function localMatchTags() {
+    const input = document.getElementById('promptEditorInput').value.trim();
+    if (!input) {
+        showToast('请输入 Prompt', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('localMatchBtn');
+    const btnText = btn.querySelector('.btn-text');
+    const btnLoading = btn.querySelector('.btn-loading');
+
+    // Show loading
+    btnText.style.display = 'none';
+    btnLoading.style.display = 'inline';
+    btn.disabled = true;
+
+    try {
+        // 解析输入文本为单独的标签
+        const parsedTagStrings = parseInputText(input);
+
+        // 从本地标签库匹配
+        editorTags = parsedTagStrings.map(tagStr => {
+            const normalizedTag = tagStr.toLowerCase().trim();
+
+            // 尝试从标签库中精确匹配或模糊匹配
+            const existingTag = tags.find(t =>
+                t.name_en.toLowerCase() === normalizedTag ||
+                t.name_zh === tagStr ||
+                t.name_en.toLowerCase().includes(normalizedTag) ||
+                normalizedTag.includes(t.name_en.toLowerCase())
+            );
+
+            if (existingTag) {
+                return {
+                    id: existingTag.id,
+                    name_en: existingTag.name_en,
+                    name_zh: existingTag.name_zh,
+                    category_id: existingTag.category_id,
+                    weight: existingTag.weight || 1,
+                    checked: false,
+                    fromLibrary: true,
+                    isNew: false
+                };
+            } else {
+                // 未匹配到的标签
+                return {
+                    id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    name_en: tagStr,
+                    name_zh: tagStr,
+                    category_id: null,
+                    weight: 1,
+                    checked: false,
+                    fromLibrary: false,
+                    isNew: true
+                };
+            }
+        });
+
+        const matchedCount = editorTags.filter(t => t.fromLibrary).length;
+        const newCount = editorTags.filter(t => t.isNew).length;
+
+        renderEditorTags();
+        showToast(`解析 ${editorTags.length} 个标签，匹配 ${matchedCount} 个，未匹配 ${newCount} 个`, 'success');
+    } catch (error) {
+        showToast('解析失败', 'error');
+        console.error(error);
+    } finally {
+        btnText.style.display = 'inline';
+        btnLoading.style.display = 'none';
+        btn.disabled = false;
+    }
+}
+
+// 解析输入文本为标签数组
+function parseInputText(text) {
+    // 移除常见的 prompt 语法: <lora:xxx>, (tag:weight), {tag}, [tag]
+    let cleaned = text.replace(/<[^>]+>/g, ''); // 移除 <lora:xxx> 等
+    cleaned = cleaned.replace(/\([^)]*:([\d.]+)\)/g, (match, weight) => {
+        // (tag:1.2) -> tag
+        return match.substring(1, match.lastIndexOf(':'));
+    });
+    cleaned = cleaned.replace(/[{}\[\]]/g, ''); // 移除 {} 和 []
+    cleaned = cleaned.replace(/:[\d.]+/g, ''); // 移除剩余的 :weight
+
+    // 按逗号、换行或分号分割
+    const parts = cleaned.split(/[,;\n]+/);
+
+    // 清理并过滤
+    return parts
+        .map(p => p.trim())
+        .filter(p => p.length >= 2);
+}
+
+// AI 智能解析 - 调用 LLM 服务
+async function smartParseTags() {
+    const input = document.getElementById('promptEditorInput').value.trim();
+    if (!input) {
+        showToast('请输入 Prompt', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('smartParseBtn');
+    const btnText = btn.querySelector('.btn-text');
+    const btnLoading = btn.querySelector('.btn-loading');
+
+    // Show loading
+    btnText.style.display = 'none';
+    btnLoading.style.display = 'inline';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/api/tags/parse', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: input })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Convert parsed tags to editor format
+            editorTags = result.tags.map(tag => {
+                // Check if tag exists in library
+                const existingTag = tags.find(t =>
+                    t.name_en.toLowerCase() === tag.name_en.toLowerCase()
+                );
+
+                return {
+                    id: existingTag ? existingTag.id : `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    name_en: tag.name_en,
+                    name_zh: tag.name_zh || tag.name_en,
+                    category_id: existingTag ? existingTag.category_id : tag.category_id,
+                    weight: tag.weight || 1,
+                    checked: false,
+                    fromLibrary: !!existingTag,
+                    isNew: !existingTag
+                };
+            });
+
+            const method = result.method === 'llm' ? 'AI智能' : '传统';
+            renderEditorTags();
+            showToast(`${method}解析出 ${editorTags.length} 个标签`, 'success');
+        } else {
+            showToast(result.error || '解析失败', 'error');
+        }
+    } catch (error) {
+        showToast('解析请求失败', 'error');
+        console.error(error);
+    } finally {
+        btnText.style.display = 'inline';
+        btnLoading.style.display = 'none';
+        btn.disabled = false;
+    }
+}
+
+// 保留旧函数名以兼容
+async function parsePromptToTags() {
+    await smartParseTags();
+}
+
+function renderEditorTags() {
+    const container = document.getElementById('editorTagsContainer');
+    const tagsSection = document.getElementById('editorTagsSection');
+    const filterSection = document.getElementById('filterSection');
+    const countBadge = document.getElementById('editorTagsCount');
+
+    if (editorTags.length === 0) {
+        tagsSection.style.display = 'none';
+        filterSection.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+
+    tagsSection.style.display = 'block';
+    filterSection.style.display = 'block';
+
+    // Load categories to both filter selects
+    loadFilterCategories();
+
+    // Update count badge
+    if (countBadge) {
+        countBadge.textContent = editorTags.length;
+    }
+
+    container.innerHTML = editorTags.map((tag, index) => {
+        const category = categories.find(c => c.id === tag.category_id);
+        const categoryName = category ? category.name_zh : '未分类';
+
+        return `
+            <div class="editor-tag-item ${tag.checked ? 'checked' : ''}"
+                 data-index="${index}"
+                 onclick="toggleEditorTag(${index})">
+                <span class="tag-checkbox"></span>
+                <div class="tag-info">
+                    <span class="tag-en">${tag.name_en}</span>
+                    <span class="tag-zh">${tag.name_zh}</span>
+                </div>
+                <span class="tag-category-badge">${categoryName}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// 加载筛选类别选项
+function loadFilterCategories() {
+    const normalSelect = document.getElementById('normalFilterCategory');
+    const smartSelect = document.getElementById('smartSelectCategory');
+
+    if (!normalSelect || !smartSelect) return;
+
+    const optionsHtml = categories.map(cat =>
+        `<option value="${cat.id}">${cat.name_zh} / ${cat.name_en}</option>`
+    ).join('');
+
+    normalSelect.innerHTML = optionsHtml;
+    smartSelect.innerHTML = optionsHtml;
+}
+
+// 普通筛选 - 根据标签的分类信息筛选
+function normalFilterByCategory() {
+    const categoryId = document.getElementById('normalFilterCategory').value;
+    if (!categoryId) {
+        showToast('请选择类别', 'error');
+        return;
+    }
+
+    let matchedCount = 0;
+    editorTags.forEach(tag => {
+        if (tag.category_id === categoryId) {
+            tag.checked = true;
+            matchedCount++;
+        }
+    });
+
+    if (matchedCount > 0) {
+        renderEditorTags();
+        const category = categories.find(c => c.id === categoryId);
+        showToast(`已选中 ${matchedCount} 个 ${category?.name_zh || ''} 类别的标签`, 'success');
+    } else {
+        showToast('没有找到该类别的标签', 'error');
+    }
+}
+
+function toggleEditorTag(index) {
+    if (editorTags[index]) {
+        editorTags[index].checked = !editorTags[index].checked;
+        renderEditorTags();
+    }
+}
+
+function selectAllEditorTags() {
+    editorTags.forEach(tag => tag.checked = true);
+    renderEditorTags();
+}
+
+function deselectAllEditorTags() {
+    editorTags.forEach(tag => tag.checked = false);
+    renderEditorTags();
+}
+
+function removeSelectedEditorTags() {
+    const checkedCount = editorTags.filter(t => t.checked).length;
+    if (checkedCount === 0) {
+        showToast('请先选择要移除的标签', 'error');
+        return;
+    }
+
+    editorTags = editorTags.filter(tag => !tag.checked);
+    renderEditorTags();
+    showToast(`已移除 ${checkedCount} 个标签`, 'success');
+}
+
+async function smartSelectByCategory() {
+    if (editorTags.length === 0) {
+        showToast('没有可分析的标签', 'error');
+        return;
+    }
+
+    const categoryId = document.getElementById('smartSelectCategory').value;
+    const category = categories.find(c => c.id === categoryId);
+
+    if (!category) {
+        showToast('请选择一个类别', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('smartSelectBtn');
+    const btnText = btn.querySelector('.btn-text');
+    const btnLoading = btn.querySelector('.btn-loading');
+
+    // Show loading
+    btnText.style.display = 'none';
+    btnLoading.style.display = 'inline';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/api/tags/analyze-relevance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tags: editorTags.map(t => ({ name_en: t.name_en, name_zh: t.name_zh })),
+                category: {
+                    id: category.id,
+                    name_en: category.name_en,
+                    name_zh: category.name_zh
+                }
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Update checked state based on relevance
+            const relevantTags = result.relevant_tags || [];
+            editorTags.forEach(tag => {
+                tag.checked = relevantTags.some(rt =>
+                    rt.toLowerCase() === tag.name_en.toLowerCase()
+                );
+            });
+
+            renderEditorTags();
+
+            const selectedCount = editorTags.filter(t => t.checked).length;
+            showToast(`AI 选中了 ${selectedCount} 个与"${category.name_zh}"相关的标签`, 'success');
+        } else {
+            showToast(result.error || '分析失败', 'error');
+        }
+    } catch (error) {
+        showToast('分析请求失败', 'error');
+        console.error(error);
+    } finally {
+        btnText.style.display = 'inline';
+        btnLoading.style.display = 'none';
+        btn.disabled = false;
+    }
+}
+
+function applyEditorChanges() {
+    // Update selectedTags based on remaining editorTags
+    selectedTags = editorTags.map(tag => {
+        // If tag is from library, find the original
+        if (tag.fromLibrary) {
+            const originalTag = tags.find(t => t.id === tag.id);
+            if (originalTag) {
+                return originalTag;
+            }
+        }
+        // Return the tag as is (might be a new tag not in library)
+        return {
+            id: tag.id,
+            name_en: tag.name_en,
+            name_zh: tag.name_zh,
+            category_id: tag.category_id,
+            weight: tag.weight
+        };
+    });
+
+    // Reset insert point
+    insertAfterIndex = selectedTags.length > 0 ? selectedTags.length - 1 : -1;
+
+    // Update UI
+    renderTags();
+    renderSelectedTags();
+    generatePrompt();
+
+    closeModal('promptEditorModal');
+    showToast('更改已应用', 'success');
 }
