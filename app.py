@@ -1101,6 +1101,81 @@ If no tags are related to this category, return an empty array: []"""
         return jsonify({"success": False, "error": error_msg}), 500
 
 
+@app.route('/api/tags/optimize-order', methods=['POST'])
+def optimize_tag_order():
+    """Optimize the order of tags using LLM for better prompt quality"""
+    if not is_llm_configured():
+        return jsonify({"success": False, "error": "LLM 服务未配置，请先在设置中配置"}), 400
+
+    data = request.json
+    tags_list = data.get('tags', [])
+
+    if not tags_list:
+        return jsonify({"success": False, "error": "没有标签需要优化"}), 400
+
+    # Build the prompt
+    tags_text = "\n".join([f"- {tag['name_en']} ({tag.get('name_zh', '')})" for tag in tags_list])
+
+    prompt = f"""You are an expert in AI image generation prompt optimization. Your task is to reorder the following tags to create the most effective prompt.
+
+Current tags (in current order):
+{tags_text}
+
+Please reorder these tags following best practices for AI image generation:
+1. Quality tags first (masterpiece, best quality, etc.)
+2. Style/art style tags second (anime, realistic, oil painting, etc.)
+3. Subject/character tags third (1girl, portrait, etc.)
+4. Scene/environment tags fourth (outdoors, forest, beach, etc.)
+5. Details and attributes last (long hair, blue eyes, specific clothing, etc.)
+
+Return ONLY a JSON array containing the English names of tags in the optimized order:
+["tag1", "tag2", "tag3", ...]
+
+Return all tags in the optimized order. Do not add or remove any tags, only reorder them.
+Response must be valid JSON array only, no explanation or other text."""
+
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant that specializes in AI art generation prompt optimization. You always respond with valid JSON only."},
+        {"role": "user", "content": prompt}
+    ]
+
+    result = call_llm_api(messages)
+
+    if result and result.get('success'):
+        try:
+            # Parse the response
+            json_str = result['content'].strip()
+            # Handle markdown code blocks
+            if json_str.startswith('```'):
+                lines = json_str.split('\n')
+                json_lines = []
+                in_code = False
+                for line in lines:
+                    if line.startswith('```'):
+                        in_code = not in_code
+                        continue
+                    if in_code or not line.startswith('```'):
+                        json_lines.append(line)
+                json_str = '\n'.join(json_lines)
+
+            optimized_tags = json.loads(json_str)
+
+            if not isinstance(optimized_tags, list):
+                return jsonify({"success": False, "error": "AI 返回格式错误"}), 500
+
+            return jsonify({
+                "success": True,
+                "optimized_tags": optimized_tags
+            })
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse LLM response: {e}")
+            print(f"Response was: {result.get('content', '')}")
+            return jsonify({"success": False, "error": "解析 AI 响应失败"}), 500
+    else:
+        error_msg = result.get('error', '优化失败') if result else '优化失败'
+        return jsonify({"success": False, "error": error_msg}), 500
+
+
 if __name__ == '__main__':
     # Initialize app data on startup
     print("\n" + "="*60)

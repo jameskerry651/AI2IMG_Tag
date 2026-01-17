@@ -281,6 +281,79 @@ async function copyPrompt() {
     }
 }
 
+// Optimize Prompt Order with AI
+async function optimizePromptOrder() {
+    if (selectedTags.length === 0) {
+        showToast('请先选择标签', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('optimizeBtn');
+    const btnIcon = btn.querySelector('.btn-icon-content');
+    const btnLoading = btn.querySelector('.btn-loading');
+
+    // Show loading state
+    if (btnIcon) btnIcon.style.display = 'none';
+    if (btnLoading) btnLoading.style.display = 'inline';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/api/tags/optimize-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tags: selectedTags.map(tag => ({
+                    name_en: tag.name_en,
+                    name_zh: tag.name_zh
+                }))
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Reorder selectedTags based on AI optimization
+            const optimizedOrder = result.optimized_tags;
+            const newSelectedTags = [];
+
+            // Build new order based on AI response
+            optimizedOrder.forEach(tagName => {
+                const tag = selectedTags.find(t => t.name_en.toLowerCase() === tagName.toLowerCase());
+                if (tag && !newSelectedTags.includes(tag)) {
+                    newSelectedTags.push(tag);
+                }
+            });
+
+            // Add any tags that might have been missed
+            selectedTags.forEach(tag => {
+                if (!newSelectedTags.includes(tag)) {
+                    newSelectedTags.push(tag);
+                }
+            });
+
+            selectedTags = newSelectedTags;
+            insertAfterIndex = selectedTags.length > 0 ? selectedTags.length - 1 : -1;
+
+            // Update UI
+            renderTags();
+            renderSelectedTags();
+            generatePrompt();
+
+            showToast('AI 已优化标签顺序!', 'success');
+        } else {
+            showToast(result.error || '优化失败', 'error');
+        }
+    } catch (error) {
+        showToast('优化请求失败', 'error');
+        console.error(error);
+    } finally {
+        // Reset button state
+        if (btnIcon) btnIcon.style.display = 'inline';
+        if (btnLoading) btnLoading.style.display = 'none';
+        btn.disabled = false;
+    }
+}
+
 // Render Categories List
 function renderCategoriesList() {
     const container = document.getElementById('categoriesList');

@@ -361,6 +361,52 @@ body::before {
     color: var(--text-primary);
 }
 
+/* Magic Button - AI Optimize */
+.btn-magic {
+    position: relative;
+    color: #fbbf24 !important;
+    transition: all var(--transition-normal);
+}
+
+.btn-magic:hover {
+    color: #f59e0b !important;
+    background: rgba(251, 191, 36, 0.1) !important;
+    transform: scale(1.05);
+}
+
+.btn-magic svg {
+    fill: currentColor;
+    animation: sparkle 2s ease-in-out infinite;
+}
+
+.btn-magic:hover svg {
+    animation: sparkle 0.6s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1) rotate(5deg);
+        opacity: 0.8;
+    }
+}
+
+.btn-magic .btn-loading {
+    font-size: 16px;
+}
+
+.btn-magic:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-magic:disabled:hover {
+    transform: none;
+}
+
 /* Category Filter - Enhanced Pill Style */
 .category-filter {
     display: flex;
