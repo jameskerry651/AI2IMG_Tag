@@ -1,16 +1,23 @@
 # AI Tag Manager 🎨
 
 <div align="center">
+
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.7+-blue.svg)
 ![Flask](https://img.shields.io/badge/flask-2.0+-green.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
 
+</div>
+
+<div align="center">
+
 **专为 AI 图像生成设计的强大 Web 标签管理与提示词生成系统**
 
-[功能特性](#功能特性) • [演示](#演示) • [安装](#安装) • [使用说明](#使用说明) • [API文档](#api文档) • [参与贡献](#参与贡献)
+[功能特性](#功能特性) • [安装](#安装) • [使用说明](#使用说明) • [API文档](#api文档) • [参与贡献](#参与贡献)
 
 [English Document](README.md)
+
+</div>
 
 ---
 
@@ -18,7 +25,9 @@
 
 AI Tag Manager 是一个专为 Stable Diffusion、NovelAI、Midjourney 等 AI 图像生成工具设计的综合性 Web 应用。集成了大模型服务，可以利用AI管理标签和生成用户需要的标签，比如用AI指令更换人物动作。
 
-<img src="doc/main.jpg" alt="main" style="zoom:80%;" />
+<div align="center">
+  <img src="doc/main.jpg" alt="主界面" width="80%">
+</div>
 
 ### 🎯 核心亮点
 
@@ -37,21 +46,25 @@ AI Tag Manager 是一个专为 Stable Diffusion、NovelAI、Midjourney 等 AI �
 
 导入多个tag，并用ai针对自己设定的类别进行分别识别：
 
-<img src="doc/auto_detect.jpg" alt="auto_detect" style="zoom:25%;" />
+<div align="center">
+  <img src="doc/auto_detect.jpg" alt="自动识别" width="60%">
+</div>
 
 ### 2️⃣AI许愿机
 
 基于已选中的tag进行动作调整或者风格编辑，输入指令后，ai自动从tag中挑选合适的标签。也可以直接根据用户质量挑选tag生成。
 
-<img src="doc/ai2tag.jpg" alt="ai2tag" style="zoom:25%;" />
+<div align="center">
+  <img src="doc/ai2tag.jpg" alt="AI许愿机" width="60%">
+</div>
 
 ### 3️⃣批量编辑
 
 移除所有动作相关的词汇，或者让AI分析哪些词汇与选择类别相关，然后高亮相关词汇，用户自己决定删除哪些tag，可以及其方便的修改人物动作，衣服或背景等。
 
-<img src="doc/prompt_editor.jpg" alt="prompt_editor" style="zoom:35%;" />
-
-
+<div align="center">
+  <img src="doc/prompt_editor.jpg" alt="提示词编辑器" width="70%">
+</div>
 
 ### 4️⃣一键优化
 
@@ -61,17 +74,20 @@ AI Tag Manager 是一个专为 Stable Diffusion、NovelAI、Midjourney 等 AI �
 
 当你使用的是flux类型的模型，依然可以使用tag组合，然后ai将tag组合成句子
 
-<img src="doc/convert.jpg" alt="convert" style="zoom:30%;" />
-
-
+<div align="center">
+  <img src="doc/convert.jpg" alt="标签转换" width="70%">
+</div>
 
 ### 6️⃣支持画廊
 
 当你创建过一些优秀作品，可以上传到画廊，连同其提示词一起上传，方便后续复现或迭代修改
 
-<img src="doc/uploads.jpg" alt="uploads" style="zoom:50%;" />
+<div align="center">
+  <img src="doc/uploads.jpg" alt="画廊上传" width="80%">
+</div>
 
-支持多种 AI 服务：
+### 7️⃣支持多种 AI 服务
+
 - **OpenAI (GPT)** - GPT-3.5、GPT-4、GPT-4-turbo
 - **Anthropic (Claude)** - Claude 3 Haiku、Sonnet、Opus
 - **Google (Gemini)** - Gemini Pro、Gemini 1.5 Pro
