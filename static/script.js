@@ -42,7 +42,7 @@ function renderCategoryFilter() {
     container.innerHTML = `
         <button class="category-btn ${currentFilter === 'all' ? 'active' : ''}"
                 data-category="all" onclick="filterByCategory('all')">
-            全部 All
+            <span>全部 All</span>
         </button>
     `;
 
@@ -52,7 +52,7 @@ function renderCategoryFilter() {
                     data-category="${cat.id}"
                     onclick="filterByCategory('${cat.id}')"
                     style="--cat-color: ${cat.color}">
-                ${cat.name_zh} ${cat.name_en}
+                <span>${cat.name_zh} ${cat.name_en}</span>
             </button>
         `;
     });
@@ -786,6 +786,82 @@ async function confirmImport() {
 
 // ============ Settings Functions ============
 
+// Provider configurations
+const PROVIDER_CONFIGS = {
+    openai: {
+        name: 'OpenAI (GPT)',
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-3.5-turbo',
+        requireApiKey: true,
+        hints: {
+            provider: '兼容 OpenAI API 格式的服务',
+            baseUrl: 'OpenAI 官方 API 地址',
+            model: '如 gpt-3.5-turbo, gpt-4, gpt-4-turbo 等'
+        }
+    },
+    claude: {
+        name: 'Anthropic (Claude)',
+        baseUrl: 'https://api.anthropic.com/v1',
+        model: 'claude-3-haiku-20240307',
+        requireApiKey: true,
+        hints: {
+            provider: 'Anthropic Claude API',
+            baseUrl: 'Anthropic 官方 API 地址',
+            model: '如 claude-3-haiku-20240307, claude-3-sonnet-20240229, claude-3-opus-20240229 等'
+        }
+    },
+    gemini: {
+        name: 'Google (Gemini)',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        model: 'gemini-pro',
+        requireApiKey: true,
+        hints: {
+            provider: 'Google Gemini API',
+            baseUrl: 'Google AI Studio API 地址',
+            model: '如 gemini-pro, gemini-1.5-pro, gemini-1.5-flash 等'
+        }
+    },
+    ollama: {
+        name: 'Ollama (本地)',
+        baseUrl: 'http://localhost:11434',
+        model: 'llama2',
+        requireApiKey: false,
+        hints: {
+            provider: '本地运行的 Ollama 服务',
+            baseUrl: 'Ollama 本地服务地址，默认为 http://localhost:11434',
+            model: '如 llama2, mistral, codellama, qwen 等（需先 ollama pull 下载）'
+        }
+    }
+};
+
+function updateProviderSettings() {
+    const provider = document.getElementById('llmProvider').value;
+    const config = PROVIDER_CONFIGS[provider];
+
+    if (!config) return;
+
+    // Update placeholders
+    document.getElementById('llmBaseUrl').placeholder = config.baseUrl;
+    document.getElementById('llmModel').placeholder = config.model;
+
+    // Update hints
+    document.getElementById('providerHint').textContent = config.hints.provider;
+    document.getElementById('baseUrlHint').textContent = config.hints.baseUrl;
+    document.getElementById('modelHint').textContent = config.hints.model;
+
+    // Update API key requirement
+    const apiKeyRequired = document.getElementById('apiKeyRequired');
+    const apiKeyInput = document.getElementById('llmApiKey');
+
+    if (config.requireApiKey) {
+        apiKeyRequired.style.display = 'inline';
+        apiKeyInput.placeholder = apiKeyInput.placeholder.includes('已配置') ? apiKeyInput.placeholder : 'sk-...';
+    } else {
+        apiKeyRequired.style.display = 'none';
+        apiKeyInput.placeholder = '可选（Ollama 本地服务通常不需要）';
+    }
+}
+
 async function openSettingsModal() {
     // Load current config
     try {
@@ -795,10 +871,14 @@ async function openSettingsModal() {
         // Populate form
         const llm = config.llm || {};
         document.getElementById('llmEnabled').checked = llm.enabled || false;
+        document.getElementById('llmProvider').value = llm.provider || 'openai';
         document.getElementById('llmBaseUrl').value = llm.base_url || 'https://api.openai.com/v1';
         document.getElementById('llmModel').value = llm.model || 'gpt-3.5-turbo';
         document.getElementById('llmApiKey').value = ''; // Don't show actual key
         document.getElementById('llmApiKey').placeholder = llm.has_api_key ? '已配置 (留空保持不变)' : 'sk-...';
+
+        // Update provider-specific settings
+        updateProviderSettings();
 
         // Show API key status
         const statusEl = document.getElementById('apiKeyStatus');
@@ -868,6 +948,7 @@ async function testLLMConnection() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                provider: document.getElementById('llmProvider').value,
                 api_key: document.getElementById('llmApiKey').value || '',
                 base_url: document.getElementById('llmBaseUrl').value,
                 model: document.getElementById('llmModel').value
@@ -900,6 +981,7 @@ async function submitSettings(event) {
     const configData = {
         llm: {
             enabled: document.getElementById('llmEnabled').checked,
+            provider: document.getElementById('llmProvider').value,
             base_url: document.getElementById('llmBaseUrl').value,
             model: document.getElementById('llmModel').value
         }

@@ -51,6 +51,7 @@ def load_config():
     default_config = {
         "llm": {
             "enabled": False,
+            "provider": "openai",  # openai, claude, gemini, ollama
             "api_key": "",
             "base_url": "https://api.openai.com/v1",
             "model": "gpt-3.5-turbo"
@@ -65,6 +66,9 @@ def load_config():
             for key in default_config:
                 if key not in config:
                     config[key] = default_config[key]
+            # Ensure provider field exists
+            if 'provider' not in config.get('llm', {}):
+                config['llm']['provider'] = 'openai'
             return config
     except:
         return default_config
@@ -82,7 +86,7 @@ def is_llm_configured():
     return llm.get('enabled', False) and llm.get('api_key', '').strip() != ''
 
 def call_llm_api(messages, config=None):
-    """Call OpenAI-compatible or Claude API"""
+    """Call LLM API - supports OpenAI, Claude, Gemini, and Ollama"""
     if config is None:
         config = load_config()
 
@@ -90,11 +94,17 @@ def call_llm_api(messages, config=None):
     api_key = llm.get('api_key', '')
     base_url = llm.get('base_url', 'https://api.openai.com/v1').rstrip('/')
     model = llm.get('model', 'gpt-3.5-turbo')
+    provider = llm.get('provider', 'openai')
 
-    # 检测是否是 Claude 模型
-    is_claude = 'claude' in model.lower()
+    # Debug info
+    print("=" * 50)
+    print("LLM API Request Debug Info:")
+    print(f"Provider: {provider}")
+    print(f"Model: {model}")
+    print(f"Base URL: {base_url}")
 
-    if is_claude:
+    # 根据提供商设置请求格式
+    if provider == 'claude':
         # Claude API 格式
         url = f"{base_url}/messages"
 
@@ -120,8 +130,69 @@ def call_llm_api(messages, config=None):
             "x-api-key": api_key,
             "anthropic-version": "2023-06-01"
         }
+        response_parser = lambda r: r['content'][0]['text']
+
+    elif provider == 'gemini':
+        # Gemini API 格式
+        # URL: https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}
+        url = f"{base_url}/models/{model}:generateContent"
+        if api_key:
+            url += f"?key={api_key}"
+
+        # 转换消息格式为 Gemini 格式
+        contents = []
+        system_instruction = None
+
+        for msg in messages:
+            if msg['role'] == 'system':
+                system_instruction = msg['content']
+            else:
+                role = 'user' if msg['role'] == 'user' else 'model'
+                contents.append({
+                    "role": role,
+                    "parts": [{"text": msg['content']}]
+                })
+
+        payload = {
+            "contents": contents,
+            "generationConfig": {
+                "temperature": 0.3,
+                "maxOutputTokens": 4000
+            }
+        }
+        if system_instruction:
+            payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
+
+        headers = {
+            "Content-Type": "application/json"
+        }
+        response_parser = lambda r: r['candidates'][0]['content']['parts'][0]['text']
+
+    elif provider == 'ollama':
+        # Ollama API 格式
+        url = f"{base_url}/api/chat"
+
+        payload = {
+            "model": model,
+            "messages": messages,
+            "stream": False,
+            "options": {
+                "temperature": 0.3,
+                "num_predict": 4000
+            }
+        }
+
+        headers = {
+            "Content-Type": "application/json"
+        }
+        # Ollama 不需要 API key，但如果提供了就添加
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+
+        response_parser = lambda r: r['message']['content']
+
     else:
-        # OpenAI API 格式
+        # OpenAI API 格式 (默认)
         url = f"{base_url}/chat/completions"
         payload = {
             "model": model,
@@ -133,13 +204,11 @@ def call_llm_api(messages, config=None):
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}"
         }
+        response_parser = lambda r: r['choices'][0]['message']['content']
 
-    # Debug: 打印完整请求信息
-    print("=" * 50)
-    print("LLM API Request Debug Info:")
-    print(f"URL: {url}")
-    print(f"Is Claude: {is_claude}")
+    # 打印请求信息（隐藏敏感信息）
     safe_headers = {k: ('***' if 'key' in k.lower() or 'authorization' in k.lower() else v) for k, v in headers.items()}
+    print(f"URL: {url}")
     print(f"Headers: {json.dumps(safe_headers, indent=2)}")
     print(f"Payload: {json.dumps(payload, indent=2, ensure_ascii=False)}")
     print("=" * 50)
@@ -150,11 +219,7 @@ def call_llm_api(messages, config=None):
 
         with urllib.request.urlopen(req, timeout=60) as response:
             result = json.loads(response.read().decode('utf-8'))
-            # Claude 和 OpenAI 响应格式不同
-            if is_claude:
-                content = result['content'][0]['text']
-            else:
-                content = result['choices'][0]['message']['content']
+            content = response_parser(result)
             return {"success": True, "content": content}
     except urllib.error.HTTPError as e:
         error_body = ""
@@ -162,8 +227,11 @@ def call_llm_api(messages, config=None):
             error_body = e.read().decode('utf-8')
             print(f"LLM API Error Response Body: {error_body}")
             error_json = json.loads(error_body)
-            # Claude 和 OpenAI 错误格式不同
-            if is_claude:
+
+            # 尝试提取错误信息（不同提供商格式不同）
+            if provider == 'gemini':
+                error_msg = error_json.get('error', {}).get('message', error_body)
+            elif provider == 'claude':
                 error_msg = error_json.get('error', {}).get('message', error_body)
             else:
                 error_msg = error_json.get('error', {}).get('message', error_body)
@@ -791,6 +859,8 @@ def update_config():
         llm_config = data['llm']
         if 'enabled' in llm_config:
             config['llm']['enabled'] = llm_config['enabled']
+        if 'provider' in llm_config:
+            config['llm']['provider'] = llm_config['provider']
         if 'api_key' in llm_config and llm_config['api_key']:
             # Only update API key if a new one is provided
             config['llm']['api_key'] = llm_config['api_key']
@@ -808,6 +878,7 @@ def test_llm_connection():
     data = request.json
     test_config = {
         'llm': {
+            'provider': data.get('provider', 'openai'),
             'api_key': data.get('api_key', ''),
             'base_url': data.get('base_url', 'https://api.openai.com/v1'),
             'model': data.get('model', 'gpt-3.5-turbo')
@@ -819,7 +890,9 @@ def test_llm_connection():
         saved_config = load_config()
         test_config['llm']['api_key'] = saved_config.get('llm', {}).get('api_key', '')
 
-    if not test_config['llm']['api_key']:
+    # Ollama 不强制要求 API key
+    provider = test_config['llm']['provider']
+    if provider != 'ollama' and not test_config['llm']['api_key']:
         return jsonify({"success": False, "error": "未配置 API 密钥"}), 400
 
     # Simple test message

@@ -360,14 +360,25 @@
 
                         <div id="llmSettings" class="llm-settings">
                             <div class="form-group">
-                                <label>API 地址 / Base URL</label>
-                                <input type="text" id="llmBaseUrl" name="base_url"
-                                       placeholder="https://api.openai.com/v1">
-                                <p class="form-hint">支持 OpenAI 兼容格式的 API（如 Azure OpenAI、本地 Ollama 等）</p>
+                                <label>服务提供商 / Provider</label>
+                                <select id="llmProvider" name="provider" onchange="updateProviderSettings()">
+                                    <option value="openai">OpenAI (GPT)</option>
+                                    <option value="claude">Anthropic (Claude)</option>
+                                    <option value="gemini">Google (Gemini)</option>
+                                    <option value="ollama">Ollama (本地)</option>
+                                </select>
+                                <p class="form-hint" id="providerHint">兼容 OpenAI API 格式的服务</p>
                             </div>
 
                             <div class="form-group">
-                                <label>API 密钥 / API Key</label>
+                                <label>API 地址 / Base URL</label>
+                                <input type="text" id="llmBaseUrl" name="base_url"
+                                       placeholder="https://api.openai.com/v1">
+                                <p class="form-hint" id="baseUrlHint">API 服务的基础地址</p>
+                            </div>
+
+                            <div class="form-group" id="apiKeyGroup">
+                                <label>API 密钥 / API Key <span id="apiKeyRequired" style="color: var(--danger);">*</span></label>
                                 <div class="input-with-action">
                                     <input type="password" id="llmApiKey" name="api_key"
                                            placeholder="sk-...">
@@ -385,7 +396,7 @@
                                 <label>模型名称 / Model</label>
                                 <input type="text" id="llmModel" name="model"
                                        placeholder="gpt-3.5-turbo">
-                                <p class="form-hint">如 gpt-3.5-turbo, gpt-4, claude-3-haiku 等</p>
+                                <p class="form-hint" id="modelHint">如 gpt-3.5-turbo, gpt-4, claude-3-haiku 等</p>
                             </div>
 
                             <div class="form-group">
