@@ -1,227 +1,286 @@
-# AI2IMG_Tag
+# AI Tag Manager 🎨
 
-AI 图像生成标签管理与提示词生成系统
+<div align="center">
 
-## 项目简介
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Python](https://img.shields.io/badge/python-3.7+-blue.svg)
+![Flask](https://img.shields.io/badge/flask-2.0+-green.svg)
+![Status](https://img.shields.io/badge/status-active-success.svg)
 
-AI2IMG_Tag 是一个专为 AI 图像生成（如 Stable Diffusion、NovelAI 等）设计的 Web 端标签管理与提示词生成工具。该应用帮助用户：
+**A powerful web-based tag management and prompt generation system for AI image generation**
 
-- 管理按类别组织的标签库
-- 通过选择标签构建正向和负向提示词
-- 支持多种权重语法格式
-- 在图库中展示和管理生成的作品
-- 追踪图像所使用的标签和提示词
+[Features](#features) • [Demo](#demo) • [Installation](#installation) • [Usage](#usage) • [API](#api-reference) • [Contributing](#contributing)
 
-## 功能特性
+[中文文档](README_CN.md)
 
-### 标签管理
-- 按自定义类别组织标签
-- 为标签分配权重（0.1 - 2.0）
-- 双语支持（中文 + 英文）
-- 使用颜色编码区分不同类别
+</div>
 
-### 提示词生成
-- 支持多种权重语法格式：
-  - **SD (Stable Diffusion)**：`(tag:weight)` 格式
-  - **NAI (NovelAI)**：`{tag}` 表示强调，`[tag]` 表示弱化
-  - **Plain**：纯文本，用逗号分隔
-- 实时预览生成的提示词
-- 一键复制到剪贴板
+---
 
-### 图库管理
-- 上传和整理生成的图像
-- 存储图像对应的正向/负向提示词
-- 追踪哪些提示词产生了哪些效果
-- 支持编辑和删除操作
+## 📖 Overview
 
-### 用户界面
-- Apple 风格设计美学
-- 毛玻璃（Glassmorphism）视觉效果
-- 响应式布局，支持多设备访问
-- 基于模态框的交互方式
-- Toast 通知提供即时反馈
+AI Tag Manager is a comprehensive web application designed specifically for AI image generation tools like Stable Diffusion, NovelAI, and Midjourney. Integrated with large language models, it can leverage AI to manage tags and generate the tags users need, such as using AI commands to change character actions.
 
-## 技术栈
+<img src="doc/main.jpg" alt="main" style="zoom:80%;" />
 
-### 后端
-- **Flask** - Python Web 框架
-- **Python 3** - 核心编程语言
-- **JSON** - 文件型数据存储
+### 🎯 Key Highlights
 
-### 前端
-- **HTML5** - 语义化页面结构
-- **CSS3** - 现代化样式与动画
-- **Vanilla JavaScript** - 原生 JS，无框架依赖
+- **🏷️ Tag Library Management** - Organize tags by categories with custom colors
+- **✨ AI-Powered Features** - Smart tag optimization, Flux prompt conversion, and AI Wishing Machine
+- **📝 Multi-Format Support** - SD, NAI, and plain text prompt formats
+- **🖼️ Gallery System** - Store and track your generated images with their prompts
+- **🔌 Multi-LLM Support** - Integrated with OpenAI, Claude, Gemini, and local Ollama
+- **📱 Responsive Design** - Perfect support for desktop and mobile devices
 
-## 项目结构
+---
+
+## ✨ Features
+
+### 1️⃣ One-Click Batch Import
+
+Import multiple tags and use AI to automatically categorize them based on your custom categories:
+
+<img src="doc/auto_detect.jpg" alt="auto_detect" style="zoom:25%;" />
+
+### 2️⃣ AI Wishing Machine
+
+Adjust actions or edit styles based on selected tags. After entering a command, AI automatically selects appropriate tags from the library. Can also directly generate tags from library based on user requirements.
+
+<img src="doc/ai2tag.jpg" alt="ai2tag" style="zoom:25%;" />
+
+### 3️⃣ Batch Editing
+
+Remove all action-related words, or have AI analyze which words are related to selected categories, then highlight relevant words for you to decide which tags to delete. This makes it extremely convenient to modify character actions, clothing, backgrounds, etc.
+
+<img src="doc/prompt_editor.jpg" alt="prompt_editor" style="zoom:35%;" />
+
+### 4️⃣ One-Click Optimization
+
+Click the magic button to optimize prompt order with one click. When you've selected a bunch of prompts and the order is messy, let AI optimize the sequence to help the model better understand the prompts.
+
+### 5️⃣ Tag to Natural Language Conversion
+
+When using Flux-type models, you can still use tag combinations, then AI will convert tags into sentences.
+
+<img src="doc/convert.jpg" alt="convert" style="zoom:30%;" />
+
+### 6️⃣ Gallery Support
+
+When you've created excellent works, you can upload them to the gallery along with their prompts for easy reproduction or iterative modification later.
+
+<img src="doc/uploads.jpg" alt="uploads" style="zoom:50%;" />
+
+Support for multiple AI services:
+- **OpenAI (GPT)** - GPT-3.5, GPT-4, GPT-4-turbo
+- **Anthropic (Claude)** - Claude 3 Haiku, Sonnet, Opus
+- **Google (Gemini)** - Gemini Pro, Gemini 1.5 Pro
+- **Ollama (Local)** - Run models locally without API keys
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.7 or higher
+- pip package manager
+
+### Installation
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/AI2IMG_Tag.git
+cd AI2IMG_Tag
+```
+
+2. **Install dependencies**
+```bash
+pip install flask
+```
+
+3. **Run the application**
+```bash
+python app.py
+```
+
+4. **Access the application**
+
+Open your browser and navigate to: `http://localhost:5000`
+
+### First Run
+
+On first launch, the application automatically creates:
+- `data/` directory with sample data
+- `data/tags.json` with example tags and categories
+- `data/gallery.json` for gallery items
+- `data/config.json` for LLM configuration
+- `static/uploads/` for image uploads
+
+**No manual setup required!**
+
+---
+
+## 📚 Usage Guide
+
+### Managing Tags
+
+1. Click the **"Add Tag"** button
+2. Fill in English and Chinese names
+3. Select a category
+4. Set the weight value (optional)
+5. Click **Save**
+
+### Generating Prompts
+
+1. Click tags from the library to select them
+2. Selected tags appear in the right panel
+3. Choose your preferred format (SD/NAI/Plain)
+4. Use AI features:
+   - **✨ AI Optimize**: Reorder tags intelligently
+   - **💬 Flux Convert**: Transform to natural language
+   - **✏️ Edit**: Modify with the prompt editor
+5. Click **Copy** to get your prompt
+
+### Using AI Wishing Machine
+
+1. Click the **"✨ AI Wishing Machine"** button in the header
+2. Choose mode:
+   - **Modify**: Adjust currently selected tags
+   - **Generate**: Create new tags from library
+3. Enter your natural language instruction
+4. Click **Execute Wish**
+5. AI processes your request and updates tags automatically
+
+### Managing Gallery
+
+1. Navigate to **Gallery** page
+2. Drag & drop or click to upload images
+3. Fill in the title and prompts used
+4. Click **Upload** to save
+5. View, edit, or delete items as needed
+
+---
+
+## 🔧 Configuration
+
+### LLM Setup
+
+1. Click the **⚙️ Settings** button
+2. Enable **"LLM Service"** toggle
+3. Select your provider:
+   - OpenAI (GPT)
+   - Anthropic (Claude)
+   - Google (Gemini)
+   - Ollama (Local)
+4. Configure settings:
+   - API Key (not needed for Ollama)
+   - Base URL (auto-filled)
+   - Model name
+5. Click **Test Connection** to verify
+6. Click **Save Settings**
+
+### Using Ollama Locally
+
+For completely offline LLM features:
+
+1. Install Ollama from [https://ollama.ai](https://ollama.ai)
+2. Download a model:
+```bash
+ollama pull llama2
+# Or other models
+ollama pull mistral
+ollama pull qwen
+```
+3. Configure in the app:
+   - Provider: **Ollama (Local)**
+   - Base URL: `http://localhost:11434`
+   - Model: `llama2` (or your downloaded model)
+   - API Key: Leave empty
+
+---
+
+## 📡 API Reference
+
+### Tags
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/tags` | Get all tags and categories |
+| POST | `/api/tags` | Create a new tag |
+| PUT | `/api/tags/<id>` | Update a tag |
+| DELETE | `/api/tags/<id>` | Delete a tag |
+| POST | `/api/tags/parse` | Parse and translate tags with AI |
+| POST | `/api/tags/optimize-order` | AI-optimize tag order |
+| POST | `/api/tags/convert-to-flux` | Convert to Flux natural language |
+| POST | `/api/tags/wish` | AI Wishing Machine endpoint |
+
+### Categories
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/categories` | Get all categories |
+| POST | `/api/categories` | Create a new category |
+| PUT | `/api/categories/<id>` | Update a category |
+| DELETE | `/api/categories/<id>` | Delete a category |
+
+### Gallery
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/gallery` | Get all gallery items |
+| POST | `/api/gallery` | Upload a new artwork |
+| PUT | `/api/gallery/<id>` | Update a gallery item |
+| DELETE | `/api/gallery/<id>` | Delete a gallery item |
+
+### Configuration
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/config` | Get current LLM configuration |
+| PUT | `/api/config` | Update LLM configuration |
+| POST | `/api/config/test-llm` | Test LLM connection |
+
+---
+
+## 🏗️ Project Structure
 
 ```
 AI2IMG_Tag/
-├── app.py                    # Flask 后端应用
+├── app.py                  # Flask backend application
 ├── data/
-│   ├── tags.json            # 标签和类别数据库
-│   └── gallery.json         # 图库数据库
+│   ├── tags.json          # Tags and categories database
+│   ├── gallery.json       # Gallery database
+│   └── config.json        # LLM configuration
 ├── static/
-│   ├── script.js            # 主页面 JavaScript
-│   ├── gallery.js           # 画廊页面 JavaScript
-│   ├── style.css            # 样式文件
-│   └── uploads/             # 用户上传的图片目录
+│   ├── script.js          # Main page JavaScript
+│   ├── gallery.js         # Gallery page JavaScript
+│   ├── style.css          # Stylesheet
+│   └── uploads/           # User uploaded images
 ├── templates/
-│   ├── index.html           # 主页面模板（标签管理）
-│   └── gallery.html         # 画廊页面模板
-└── README.md                 # 项目文档
+│   ├── index.html         # Main page (tag management)
+│   └── gallery.html       # Gallery page
+├── README.md              # English documentation
+└── README_CN.md           # Chinese documentation
 ```
 
-## 安装与运行
+---
 
-### 环境要求
-- Python 3.7+
-- pip 包管理器
+## 🛠️ Tech Stack
 
-### 快速开始
+### Backend
+- **Flask** - Python web framework
+- **Python 3.7+** - Core programming language
+- **JSON** - File-based data storage
 
-1. **克隆项目**
-   ```bash
-   git clone <repository-url>
-   cd AI2IMG_Tag
-   ```
+### Frontend
+- **HTML5** - Semantic markup
+- **CSS3** - Modern styling with animations
+- **Vanilla JavaScript** - No framework dependencies
 
-2. **安装依赖**
-   ```bash
-   pip install flask
-   ```
+---
 
-3. **启动应用**
-   ```bash
-   python app.py
-   ```
+## 📊 Data Structures
 
-   首次启动时，应用会自动创建所有必要的目录和文件：
-   - `data/` - 数据文件目录
-   - `data/tags.json` - 标签和分类数据（包含示例数据）
-   - `data/gallery.json` - 图库数据
-   - `data/config.json` - LLM配置文件
-   - `static/uploads/` - 图片上传目录
-
-   **无需手动创建任何文件！**
-
-4. **访问应用**
-
-   在浏览器中打开：`http://localhost:5000`
-
-### 示例数据
-
-首次启动时，系统会自动创建包含以下内容的示例数据：
-
-**分类示例：**
-- Quality (质量)
-- Style (风格)
-- Character (角色)
-- Scene (场景)
-
-**标签示例：**
-- masterpiece (杰作)
-- best quality (最佳质量)
-- anime (动漫)
-- 1girl (一个女孩)
-- outdoors (户外)
-
-你可以直接使用这些示例数据开始体验，也可以删除后添加自己的标签。
-
-## 新功能：多LLM服务支持
-
-### 支持的服务提供商
-
-应用现在支持多种大语言模型服务：
-
-1. **OpenAI (GPT)**
-   - Base URL: `https://api.openai.com/v1`
-   - 推荐模型: `gpt-3.5-turbo`, `gpt-4`, `gpt-4-turbo`
-
-2. **Anthropic (Claude)**
-   - Base URL: `https://api.anthropic.com/v1`
-   - 推荐模型: `claude-3-haiku-20240307`, `claude-3-sonnet-20240229`, `claude-3-opus-20240229`
-
-3. **Google (Gemini)**
-   - Base URL: `https://generativelanguage.googleapis.com/v1beta`
-   - 推荐模型: `gemini-pro`, `gemini-1.5-pro`, `gemini-1.5-flash`
-
-4. **Ollama (本地部署)**
-   - Base URL: `http://localhost:11434`
-   - 推荐模型: `llama2`, `mistral`, `codellama`, `qwen`
-   - **无需API密钥**，适合本地离线使用
-
-### LLM配置步骤
-
-1. 点击右上角设置按钮 ⚙️
-2. 启用"大模型服务"开关
-3. 选择服务提供商
-4. 填写配置信息：
-   - API密钥（Ollama不需要）
-   - API地址（自动填充默认值）
-   - 模型名称
-5. 点击"测试连接"验证配置
-6. 保存设置
-
-### LLM功能应用
-
-配置LLM后，以下功能将得到增强：
-
-- **批量导入标签**：自动翻译和智能分类
-- **Prompt解析**：AI智能解析现有Prompt
-- **标签筛选**：基于语义的智能筛选
-
-### Ollama本地部署指南
-
-使用Ollama可以完全离线运行LLM功能：
-
-1. 安装Ollama（访问 https://ollama.ai）
-2. 下载模型：
-   ```bash
-   ollama pull llama2
-   # 或其他模型
-   ollama pull mistral
-   ollama pull qwen
-   ```
-3. 启动Ollama服务（通常自动启动）
-4. 在应用中配置：
-   - 服务提供商：Ollama (本地)
-   - API地址：`http://localhost:11434`
-   - 模型名称：`llama2`（或你下载的模型）
-   - API密钥：留空
-
-## API 接口
-
-### 标签相关
-
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| GET | `/api/tags` | 获取所有标签和类别 |
-| POST | `/api/tags` | 添加新标签 |
-| PUT | `/api/tags/<id>` | 更新标签 |
-| DELETE | `/api/tags/<id>` | 删除标签 |
-
-### 类别相关
-
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| GET | `/api/categories` | 获取所有类别 |
-| POST | `/api/categories` | 添加类别 |
-| DELETE | `/api/categories/<id>` | 删除类别 |
-
-### 图库相关
-
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| GET | `/api/gallery` | 获取所有图库项 |
-| POST | `/api/gallery` | 上传新作品 |
-| PUT | `/api/gallery/<id>` | 更新图库项 |
-| DELETE | `/api/gallery/<id>` | 删除图库项 |
-
-## 数据结构
-
-### 标签数据 (tags.json)
-
+### Tag Data (tags.json)
 ```json
 {
   "categories": [
@@ -245,59 +304,48 @@ AI2IMG_Tag/
 }
 ```
 
-### 图库数据 (gallery.json)
-
+### Gallery Data (gallery.json)
 ```json
 {
   "items": [
     {
       "id": "item_1234567890",
       "image": "image_filename.png",
-      "title": "作品标题",
-      "positive_prompt": "正向提示词",
-      "negative_prompt": "负向提示词",
+      "title": "Artwork Title",
+      "positive_prompt": "positive prompt text",
+      "negative_prompt": "negative prompt text",
       "created_at": "2024-01-01T00:00:00"
     }
   ]
 }
 ```
 
-## 配置说明
+---
 
-应用使用以下默认配置（在 `app.py` 中定义）：
+## 🤝 Contributing
 
-| 配置项 | 默认值 | 说明 |
-|--------|--------|------|
-| UPLOAD_FOLDER | `static/uploads` | 图片上传目录 |
-| ALLOWED_EXTENSIONS | `png, jpg, jpeg, gif, webp` | 允许的图片格式 |
-| MAX_CONTENT_LENGTH | 16MB | 最大上传文件大小 |
-| DEBUG | True | 调试模式 |
-| PORT | 5000 | 服务端口 |
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-## 使用指南
+### Development Setup
 
-### 添加标签
+1. Fork the repository
+2. Create your feature branch: `git checkout -b feature/AmazingFeature`
+3. Commit your changes: `git commit -m 'Add some AmazingFeature'`
+4. Push to the branch: `git push origin feature/AmazingFeature`
+5. Open a Pull Request
 
-1. 点击"添加标签"按钮
-2. 输入标签的中英文名称
-3. 选择所属类别
-4. 设置权重值
-5. 点击保存
+---
 
-### 生成提示词
+## 📝 License
 
-1. 在标签库中点击需要的标签
-2. 选中的标签会出现在已选标签区域
-3. 选择输出格式（SD/NAI/Plain）
-4. 点击复制按钮获取提示词
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### 上传作品
+---
 
-1. 切换到图库标签页
-2. 拖拽图片到上传区域，或点击选择文件
-3. 填写作品标题和使用的提示词
-4. 点击上传保存
+<div align="center">
 
-## 许可证
+**Made with ❤️ for AI Artists**
 
-MIT License
+⭐ Star us on GitHub if this project helped you!
+
+</div>
