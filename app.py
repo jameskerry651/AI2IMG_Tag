@@ -1176,6 +1176,70 @@ Response must be valid JSON array only, no explanation or other text."""
         return jsonify({"success": False, "error": error_msg}), 500
 
 
+@app.route('/api/tags/convert-to-flux', methods=['POST'])
+def convert_to_flux_prompt():
+    """Convert selected tags to natural language suitable for Flux model"""
+    if not is_llm_configured():
+        return jsonify({"success": False, "error": "LLM 服务未配置，请先在设置中配置"}), 400
+
+    data = request.json
+    tags_list = data.get('tags', [])
+
+    if not tags_list:
+        return jsonify({"success": False, "error": "没有标签需要转换"}), 400
+
+    # Build the prompt
+    tags_text = "\n".join([f"- {tag['name_en']} ({tag.get('name_zh', '')})" for tag in tags_list])
+
+    prompt = f"""You are an expert in converting AI art generation tags into natural language prompts optimized for Flux models.
+
+Flux models work best with natural, descriptive language rather than comma-separated tags. Your task is to convert the following tags into a flowing, natural language description.
+
+Tags to convert:
+{tags_text}
+
+Guidelines for Flux prompt conversion:
+1. Write in natural, flowing sentences (not comma-separated keywords)
+2. Maintain all important details from the tags
+3. Use descriptive language and vivid imagery
+4. Combine related concepts into coherent phrases
+5. Start with the main subject, then add style, setting, and details
+6. Keep the prompt concise but descriptive (2-4 sentences ideal)
+7. Use artistic and evocative language
+
+Example conversions:
+- Tags: "masterpiece, 1girl, long hair, blue eyes, outdoors, sunset"
+  → Flux: "A masterpiece portrait of a beautiful girl with long flowing hair and striking blue eyes, standing outdoors during a breathtaking sunset."
+
+- Tags: "anime style, cyberpunk, city, neon lights, rain, night"
+  → Flux: "An anime-style cyberpunk cityscape at night, with vibrant neon lights reflecting off rain-soaked streets in a futuristic metropolis."
+
+Return ONLY the natural language prompt as plain text. Do not include any JSON formatting, quotes, or explanations."""
+
+    messages = [
+        {"role": "system", "content": "You are an expert at converting AI art tags into natural, flowing descriptions optimized for Flux image generation models. Always respond with plain text only."},
+        {"role": "user", "content": prompt}
+    ]
+
+    result = call_llm_api(messages)
+
+    if result and result.get('success'):
+        natural_prompt = result['content'].strip()
+        # Remove any quotes if LLM added them
+        if natural_prompt.startswith('"') and natural_prompt.endswith('"'):
+            natural_prompt = natural_prompt[1:-1]
+        if natural_prompt.startswith("'") and natural_prompt.endswith("'"):
+            natural_prompt = natural_prompt[1:-1]
+
+        return jsonify({
+            "success": True,
+            "natural_prompt": natural_prompt
+        })
+    else:
+        error_msg = result.get('error', '转换失败') if result else '转换失败'
+        return jsonify({"success": False, "error": error_msg}), 500
+
+
 if __name__ == '__main__':
     # Initialize app data on startup
     print("\n" + "="*60)

@@ -354,6 +354,56 @@ async function optimizePromptOrder() {
     }
 }
 
+// Convert Tags to Flux Natural Language Prompt
+async function convertToFluxPrompt() {
+    if (selectedTags.length === 0) {
+        showToast('请先选择标签', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('fluxBtn');
+    const btnIcon = btn.querySelector('.btn-icon-content');
+    const btnLoading = btn.querySelector('.btn-loading');
+
+    // Show loading state
+    if (btnIcon) btnIcon.style.display = 'none';
+    if (btnLoading) btnLoading.style.display = 'inline';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/api/tags/convert-to-flux', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tags: selectedTags.map(tag => ({
+                    name_en: tag.name_en,
+                    name_zh: tag.name_zh
+                }))
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Update prompt output with natural language
+            const output = document.getElementById('promptOutput');
+            output.textContent = result.natural_prompt;
+
+            showToast('已转换为 Flux 自然语言提示词!', 'success');
+        } else {
+            showToast(result.error || '转换失败', 'error');
+        }
+    } catch (error) {
+        showToast('转换请求失败', 'error');
+        console.error(error);
+    } finally {
+        // Reset button state
+        if (btnIcon) btnIcon.style.display = 'inline';
+        if (btnLoading) btnLoading.style.display = 'none';
+        btn.disabled = false;
+    }
+}
+
 // Render Categories List
 function renderCategoriesList() {
     const container = document.getElementById('categoriesList');

@@ -407,6 +407,51 @@ body::before {
     transform: none;
 }
 
+/* Flux Button - Natural Language Conversion */
+.btn-flux {
+    position: relative;
+    color: #8b5cf6 !important;
+    transition: all var(--transition-normal);
+}
+
+.btn-flux:hover {
+    color: #7c3aed !important;
+    background: rgba(139, 92, 246, 0.1) !important;
+    transform: scale(1.05);
+}
+
+.btn-flux svg {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.btn-flux:hover svg {
+    animation: pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.btn-flux .btn-loading {
+    font-size: 16px;
+}
+
+.btn-flux:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-flux:disabled:hover {
+    transform: none;
+}
+
 /* Category Filter - Enhanced Pill Style */
 .category-filter {
     display: flex;
