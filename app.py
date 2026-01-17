@@ -19,6 +19,121 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 
+def init_app_data():
+    """Initialize application data directories and default files"""
+    # Create data directory if not exists
+    data_dir = os.path.join(os.path.dirname(__file__), 'data')
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+        print(f"✓ Created data directory: {data_dir}")
+
+    # Create uploads directory if not exists
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
+        print(f"✓ Created uploads directory: {UPLOAD_FOLDER}")
+
+    # Create default tags.json with sample data if not exists
+    if not os.path.exists(DATA_FILE):
+        default_data = {
+            "categories": [
+                {
+                    "id": "20240101000001",
+                    "name_en": "Quality",
+                    "name_zh": "质量",
+                    "color": "#667eea"
+                },
+                {
+                    "id": "20240101000002",
+                    "name_en": "Style",
+                    "name_zh": "风格",
+                    "color": "#48bb78"
+                },
+                {
+                    "id": "20240101000003",
+                    "name_en": "Character",
+                    "name_zh": "角色",
+                    "color": "#f56565"
+                },
+                {
+                    "id": "20240101000004",
+                    "name_en": "Scene",
+                    "name_zh": "场景",
+                    "color": "#ed8936"
+                }
+            ],
+            "tags": [
+                {
+                    "id": "20240101000101",
+                    "name_en": "masterpiece",
+                    "name_zh": "杰作",
+                    "category_id": "20240101000001",
+                    "weight": 1.0,
+                    "created_at": datetime.now().isoformat()
+                },
+                {
+                    "id": "20240101000102",
+                    "name_en": "best quality",
+                    "name_zh": "最佳质量",
+                    "category_id": "20240101000001",
+                    "weight": 1.0,
+                    "created_at": datetime.now().isoformat()
+                },
+                {
+                    "id": "20240101000103",
+                    "name_en": "anime",
+                    "name_zh": "动漫",
+                    "category_id": "20240101000002",
+                    "weight": 1.0,
+                    "created_at": datetime.now().isoformat()
+                },
+                {
+                    "id": "20240101000104",
+                    "name_en": "1girl",
+                    "name_zh": "一个女孩",
+                    "category_id": "20240101000003",
+                    "weight": 1.0,
+                    "created_at": datetime.now().isoformat()
+                },
+                {
+                    "id": "20240101000105",
+                    "name_en": "outdoors",
+                    "name_zh": "户外",
+                    "category_id": "20240101000004",
+                    "weight": 1.0,
+                    "created_at": datetime.now().isoformat()
+                }
+            ]
+        }
+        with open(DATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(default_data, f, ensure_ascii=False, indent=2)
+        print(f"✓ Created default tags.json with {len(default_data['categories'])} categories and {len(default_data['tags'])} sample tags")
+
+    # Create default gallery.json if not exists
+    if not os.path.exists(GALLERY_FILE):
+        default_gallery = {
+            "items": []
+        }
+        with open(GALLERY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(default_gallery, f, ensure_ascii=False, indent=2)
+        print(f"✓ Created default gallery.json")
+
+    # Create default config.json if not exists
+    if not os.path.exists(CONFIG_FILE):
+        default_config = {
+            "llm": {
+                "enabled": False,
+                "provider": "openai",
+                "api_key": "",
+                "base_url": "https://api.openai.com/v1",
+                "model": "gpt-3.5-turbo"
+            }
+        }
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(default_config, f, ensure_ascii=False, indent=2)
+        print(f"✓ Created default config.json")
+
+    print("✓ Application initialization complete!")
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -987,4 +1102,12 @@ If no tags are related to this category, return an empty array: []"""
 
 
 if __name__ == '__main__':
+    # Initialize app data on startup
+    print("\n" + "="*60)
+    print("AI Tag Manager - Initializing...")
+    print("="*60)
+    init_app_data()
+    print("="*60)
+    print("Starting server on http://127.0.0.1:5000")
+    print("="*60 + "\n")
     app.run(debug=True, port=5000)

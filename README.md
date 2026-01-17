@@ -78,7 +78,7 @@ AI2IMG_Tag/
 - Python 3.7+
 - pip 包管理器
 
-### 安装步骤
+### 快速开始
 
 1. **克隆项目**
    ```bash
@@ -91,36 +91,104 @@ AI2IMG_Tag/
    pip install flask
    ```
 
-3. **创建必要目录**
-   ```bash
-   mkdir -p data static/uploads
-   ```
-
-4. **初始化数据文件**（如果不存在）
-
-   创建 `data/tags.json`：
-   ```json
-   {
-     "categories": [],
-     "tags": []
-   }
-   ```
-
-   创建 `data/gallery.json`：
-   ```json
-   {
-     "items": []
-   }
-   ```
-
-5. **启动应用**
+3. **启动应用**
    ```bash
    python app.py
    ```
 
-6. **访问应用**
+   首次启动时，应用会自动创建所有必要的目录和文件：
+   - `data/` - 数据文件目录
+   - `data/tags.json` - 标签和分类数据（包含示例数据）
+   - `data/gallery.json` - 图库数据
+   - `data/config.json` - LLM配置文件
+   - `static/uploads/` - 图片上传目录
+
+   **无需手动创建任何文件！**
+
+4. **访问应用**
 
    在浏览器中打开：`http://localhost:5000`
+
+### 示例数据
+
+首次启动时，系统会自动创建包含以下内容的示例数据：
+
+**分类示例：**
+- Quality (质量)
+- Style (风格)
+- Character (角色)
+- Scene (场景)
+
+**标签示例：**
+- masterpiece (杰作)
+- best quality (最佳质量)
+- anime (动漫)
+- 1girl (一个女孩)
+- outdoors (户外)
+
+你可以直接使用这些示例数据开始体验，也可以删除后添加自己的标签。
+
+## 新功能：多LLM服务支持
+
+### 支持的服务提供商
+
+应用现在支持多种大语言模型服务：
+
+1. **OpenAI (GPT)**
+   - Base URL: `https://api.openai.com/v1`
+   - 推荐模型: `gpt-3.5-turbo`, `gpt-4`, `gpt-4-turbo`
+
+2. **Anthropic (Claude)**
+   - Base URL: `https://api.anthropic.com/v1`
+   - 推荐模型: `claude-3-haiku-20240307`, `claude-3-sonnet-20240229`, `claude-3-opus-20240229`
+
+3. **Google (Gemini)**
+   - Base URL: `https://generativelanguage.googleapis.com/v1beta`
+   - 推荐模型: `gemini-pro`, `gemini-1.5-pro`, `gemini-1.5-flash`
+
+4. **Ollama (本地部署)**
+   - Base URL: `http://localhost:11434`
+   - 推荐模型: `llama2`, `mistral`, `codellama`, `qwen`
+   - **无需API密钥**，适合本地离线使用
+
+### LLM配置步骤
+
+1. 点击右上角设置按钮 ⚙️
+2. 启用"大模型服务"开关
+3. 选择服务提供商
+4. 填写配置信息：
+   - API密钥（Ollama不需要）
+   - API地址（自动填充默认值）
+   - 模型名称
+5. 点击"测试连接"验证配置
+6. 保存设置
+
+### LLM功能应用
+
+配置LLM后，以下功能将得到增强：
+
+- **批量导入标签**：自动翻译和智能分类
+- **Prompt解析**：AI智能解析现有Prompt
+- **标签筛选**：基于语义的智能筛选
+
+### Ollama本地部署指南
+
+使用Ollama可以完全离线运行LLM功能：
+
+1. 安装Ollama（访问 https://ollama.ai）
+2. 下载模型：
+   ```bash
+   ollama pull llama2
+   # 或其他模型
+   ollama pull mistral
+   ollama pull qwen
+   ```
+3. 启动Ollama服务（通常自动启动）
+4. 在应用中配置：
+   - 服务提供商：Ollama (本地)
+   - API地址：`http://localhost:11434`
+   - 模型名称：`llama2`（或你下载的模型）
+   - API密钥：留空
 
 ## API 接口
 

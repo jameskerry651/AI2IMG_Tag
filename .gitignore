@@ -1,10 +1,12 @@
-# Data files
+# Data files (auto-generated on startup)
 data/tags.json
 data/gallery.json
 data/config.json
 
 # Uploaded images
-static/uploads/
+static/uploads/*
+# Keep the uploads directory but ignore its contents
+!static/uploads/.gitkeep
 
 # Python
 __pycache__/
