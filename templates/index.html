@@ -23,6 +23,13 @@
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                     </svg>
                 </button>
+                <button class="btn btn-nav btn-wish-nav" onclick="openWishingMachine()" title="AI 许愿机">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
+                        <circle cx="12" cy="12" r="1"></circle>
+                    </svg>
+                    AI 许愿机
+                </button>
                 <a href="/gallery" class="btn btn-nav">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7"></rect>
@@ -572,6 +579,48 @@
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                         应用更改
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wishing Machine Modal -->
+    <div class="modal" id="wishingMachineModal">
+        <div class="modal-overlay" onclick="closeModal('wishingMachineModal')"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>AI 许愿机 ✨</h3>
+                <button class="btn-close" onclick="closeModal('wishingMachineModal')">&times;</button>
+            </div>
+            <div class="wish-container">
+                <div class="form-group">
+                    <label>模式选择</label>
+                    <select id="wishMode" onchange="updateWishModeHint()">
+                        <option value="modify">修改已选标签</option>
+                        <option value="generate">从标签库生成</option>
+                    </select>
+                    <p class="form-hint" id="wishModeHint">基于当前已选标签进行修改、调整或扩展</p>
+                </div>
+
+                <div class="form-group">
+                    <label>您的指令</label>
+                    <textarea id="wishInstruction" rows="4" placeholder="例如：&#10;- 修改人物动作为跳跃&#10;- 添加赛博朋克风格&#10;- 生成一组温馨的室内场景标签&#10;- 将背景改为夜晚的城市"></textarea>
+                    <p class="form-hint">描述您想要的修改或生成内容，AI 会根据您的指令智能调整标签</p>
+                </div>
+
+                <div id="wishResult" style="display: none; padding: 12px; background: var(--bg-tertiary); border-radius: var(--radius-md); margin-bottom: 16px; font-size: 0.9rem;"></div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('wishingMachineModal')">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="executeWish()" id="wishExecuteBtn">
+                        <span class="btn-text">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
+                            </svg>
+                            执行许愿
+                        </span>
+                        <span class="btn-loading" style="display:none;">处理中...</span>
                     </button>
                 </div>
             </div>

@@ -1240,6 +1240,138 @@ Return ONLY the natural language prompt as plain text. Do not include any JSON f
         return jsonify({"success": False, "error": error_msg}), 500
 
 
+@app.route('/api/tags/wish', methods=['POST'])
+def wish_tags():
+    """Wishing Machine - Modify or generate tags based on user instructions"""
+    if not is_llm_configured():
+        return jsonify({"success": False, "error": "LLM 服务未配置，请先在设置中配置"}), 400
+
+    data = request.json
+    mode = data.get('mode', 'modify')  # 'modify' or 'generate'
+    user_instruction = data.get('instruction', '')
+    current_tags = data.get('tags', [])
+
+    if not user_instruction.strip():
+        return jsonify({"success": False, "error": "请输入您的指令"}), 400
+
+    # Load available tags from library for reference
+    db_data = load_data()
+    library_tags = db_data.get('tags', [])
+    categories = db_data.get('categories', [])
+
+    if mode == 'modify':
+        # Modify existing selected tags based on user instruction
+        if not current_tags:
+            return jsonify({"success": False, "error": "没有已选标签可以修改"}), 400
+
+        tags_text = ", ".join([tag['name_en'] for tag in current_tags])
+
+        prompt = f"""You are an AI art prompt expert. The user has selected these tags:
+{tags_text}
+
+The user wants to modify them with this instruction:
+"{user_instruction}"
+
+Please modify the tag list according to the user's instruction. You can:
+- Add new tags
+- Remove existing tags
+- Replace tags with alternatives
+- Adjust the tag list to better match the instruction
+
+Return ONLY a JSON array of tag names (English) that represents the modified tag list:
+["tag1", "tag2", "tag3", ...]
+
+Keep tags relevant to AI image generation. Be creative but practical."""
+
+    else:  # mode == 'generate'
+        # Generate new tags based on user instruction and tag library
+        library_examples = [tag['name_en'] for tag in library_tags[:30]]  # Sample of available tags
+        examples_text = ", ".join(library_examples)
+
+        prompt = f"""You are an AI art prompt expert. The user wants to generate a set of tags with this instruction:
+"{user_instruction}"
+
+Here are some example tags from the available tag library for reference:
+{examples_text}
+
+Please generate a comprehensive set of tags (10-20 tags) that match the user's instruction. Include:
+- Quality tags (masterpiece, best quality, etc.)
+- Style tags
+- Subject/character tags
+- Scene/background tags
+- Detail tags
+
+Return ONLY a JSON array of tag names (English):
+["tag1", "tag2", "tag3", ...]
+
+Make sure tags are relevant to AI image generation and follow common prompt conventions."""
+
+    messages = [
+        {"role": "system", "content": "You are an expert in AI art generation prompts. You always respond with valid JSON only."},
+        {"role": "user", "content": prompt}
+    ]
+
+    result = call_llm_api(messages)
+
+    if result and result.get('success'):
+        try:
+            # Parse the response
+            json_str = result['content'].strip()
+            # Handle markdown code blocks
+            if json_str.startswith('```'):
+                lines = json_str.split('\n')
+                json_lines = []
+                in_code = False
+                for line in lines:
+                    if line.startswith('```'):
+                        in_code = not in_code
+                        continue
+                    if in_code or not line.startswith('```'):
+                        json_lines.append(line)
+                json_str = '\n'.join(json_lines)
+
+            tag_names = json.loads(json_str)
+
+            if not isinstance(tag_names, list):
+                return jsonify({"success": False, "error": "AI 返回格式错误"}), 500
+
+            # Match tags with library and prepare response
+            result_tags = []
+            for tag_name in tag_names:
+                # Find matching tag in library
+                matching_tag = None
+                for lib_tag in library_tags:
+                    if lib_tag['name_en'].lower() == tag_name.lower():
+                        matching_tag = lib_tag
+                        break
+
+                if matching_tag:
+                    result_tags.append(matching_tag)
+                else:
+                    # Create a temporary tag structure for new tags
+                    result_tags.append({
+                        'id': f'temp_{tag_name}',
+                        'name_en': tag_name,
+                        'name_zh': tag_name,
+                        'category_id': categories[0]['id'] if categories else None,
+                        'weight': 1.0,
+                        'is_new': True
+                    })
+
+            return jsonify({
+                "success": True,
+                "tags": result_tags,
+                "mode": mode
+            })
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse LLM response: {e}")
+            print(f"Response was: {result.get('content', '')}")
+            return jsonify({"success": False, "error": "解析 AI 响应失败"}), 500
+    else:
+        error_msg = result.get('error', '处理失败') if result else '处理失败'
+        return jsonify({"success": False, "error": error_msg}), 500
+
+
 if __name__ == '__main__':
     # Initialize app data on startup
     print("\n" + "="*60)

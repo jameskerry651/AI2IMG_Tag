@@ -49,7 +49,7 @@ function renderCategoryFilter() {
     container.innerHTML = `
         <button class="category-btn ${currentFilter === 'all' ? 'active' : ''}"
                 data-category="all" onclick="filterByCategory('all')">
-            <span>全部 All</span>
+            <span>全部</span>
         </button>
     `;
 
@@ -59,7 +59,7 @@ function renderCategoryFilter() {
                     data-category="${cat.id}"
                     onclick="filterByCategory('${cat.id}')"
                     style="--cat-color: ${cat.color}">
-                <span>${cat.name_zh} ${cat.name_en}</span>
+                <span>${cat.name_zh}</span>
             </button>
         `;
     });
@@ -1196,6 +1196,102 @@ async function submitSettings(event) {
     } catch (error) {
         showToast('保存请求失败', 'error');
         console.error(error);
+    }
+}
+
+
+// ============ Wishing Machine Functions ============
+
+function openWishingMachine() {
+    // Reset state
+    document.getElementById('wishInstruction').value = '';
+    document.getElementById('wishMode').value = 'modify';
+    document.getElementById('wishResult').style.display = 'none';
+    updateWishModeHint();
+
+    openModal('wishingMachineModal');
+}
+
+function updateWishModeHint() {
+    const mode = document.getElementById('wishMode').value;
+    const hint = document.getElementById('wishModeHint');
+
+    if (mode === 'modify') {
+        hint.textContent = '基于当前已选标签进行修改、调整或扩展';
+    } else {
+        hint.textContent = '从标签库中全新生成一组标签';
+    }
+}
+
+async function executeWish() {
+    const instruction = document.getElementById('wishInstruction').value.trim();
+    const mode = document.getElementById('wishMode').value;
+
+    if (!instruction) {
+        showToast('请输入您的指令', 'error');
+        return;
+    }
+
+    // Check if modify mode but no selected tags
+    if (mode === 'modify' && selectedTags.length === 0) {
+        showToast('修改模式需要先选择标签', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('wishExecuteBtn');
+    const btnText = btn.querySelector('.btn-text');
+    const btnLoading = btn.querySelector('.btn-loading');
+
+    // Show loading state
+    btnText.style.display = 'none';
+    btnLoading.style.display = 'inline';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/api/tags/wish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                mode: mode,
+                instruction: instruction,
+                tags: selectedTags
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Replace selected tags with AI-generated tags
+            selectedTags = result.tags;
+            insertAfterIndex = selectedTags.length > 0 ? selectedTags.length - 1 : -1;
+
+            // Update UI
+            renderTags();
+            renderSelectedTags();
+            generatePrompt();
+
+            // Show result message
+            const resultDiv = document.getElementById('wishResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `<span style="color: var(--success);">✓ AI 已${mode === 'modify' ? '修改' : '生成'}标签，共 ${result.tags.length} 个</span>`;
+
+            showToast(`AI 已成功${mode === 'modify' ? '修改' : '生成'}标签!`, 'success');
+
+            // Auto close modal after 2 seconds
+            setTimeout(() => {
+                closeModal('wishingMachineModal');
+            }, 2000);
+        } else {
+            showToast(result.error || '处理失败', 'error');
+        }
+    } catch (error) {
+        showToast('请求失败', 'error');
+        console.error(error);
+    } finally {
+        // Reset button state
+        btnText.style.display = 'inline';
+        btnLoading.style.display = 'none';
+        btn.disabled = false;
     }
 }
 

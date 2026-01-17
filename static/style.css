@@ -482,6 +482,73 @@ body::before {
     }
 }
 
+/* Wishing Machine Button in Header */
+.btn-wish-nav {
+    background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+    color: white !important;
+    box-shadow: 0 4px 16px rgba(236, 72, 153, 0.3);
+}
+
+.btn-wish-nav:hover {
+    box-shadow: 0 8px 24px rgba(236, 72, 153, 0.4);
+    transform: translateY(-50%) translateY(-2px);
+}
+
+.btn-wish-nav svg {
+    animation: twinkle 2s ease-in-out infinite;
+}
+
+.btn-wish-nav:hover svg {
+    animation: twinkle 0.8s ease-in-out infinite;
+}
+
+/* Wishing Machine Button */
+.btn-wish {
+    position: relative;
+    color: #ec4899 !important;
+    transition: all var(--transition-normal);
+}
+
+.btn-wish:hover {
+    color: #db2777 !important;
+    background: rgba(236, 72, 153, 0.1) !important;
+    transform: scale(1.05);
+}
+
+.btn-wish svg {
+    animation: twinkle 2s ease-in-out infinite;
+}
+
+.btn-wish:hover svg {
+    animation: twinkle 0.8s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+    25% {
+        transform: scale(1.15) rotate(10deg);
+        opacity: 0.9;
+    }
+    50% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+    75% {
+        transform: scale(1.15) rotate(-10deg);
+        opacity: 0.9;
+    }
+}
+
+/* Wishing Machine Modal */
+.wish-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
 /* Category Filter - Enhanced Pill Style */
 .category-filter {
     display: flex;
