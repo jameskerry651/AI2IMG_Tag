@@ -6,6 +6,13 @@ let currentFilter = 'all';
 let parsedImportTags = []; // For batch import
 let insertAfterIndex = -1; // 插入位置：-1 表示末尾，其他值表示在该索引后插入
 
+// Prompt format state
+let promptFormats = {
+    sd: '',           // SD format (tag-based)
+    flux: ''          // Flux format (natural language)
+};
+let currentPromptFormat = 'sd'; // 'sd' or 'flux'
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadData();
@@ -227,6 +234,10 @@ function generatePrompt() {
 
     if (selectedTags.length === 0) {
         output.innerHTML = '<span class="placeholder">选择标签后生成 Prompt...</span>';
+        promptFormats.sd = '';
+        promptFormats.flux = '';
+        currentPromptFormat = 'sd';
+        updateToggleButton();
         return;
     }
 
@@ -260,7 +271,14 @@ function generatePrompt() {
         }
     });
 
-    output.textContent = promptParts.join(', ');
+    promptFormats.sd = promptParts.join(', ');
+
+    // If we don't have flux format yet, clear it when tags change
+    if (currentPromptFormat === 'sd') {
+        output.textContent = promptFormats.sd;
+    }
+
+    updateToggleButton();
 }
 
 // Copy Prompt to Clipboard
@@ -385,9 +403,16 @@ async function convertToFluxPrompt() {
         const result = await response.json();
 
         if (result.success) {
+            // Save flux format and switch to it
+            promptFormats.flux = result.natural_prompt;
+            currentPromptFormat = 'flux';
+
             // Update prompt output with natural language
             const output = document.getElementById('promptOutput');
-            output.textContent = result.natural_prompt;
+            output.textContent = promptFormats.flux;
+
+            // Update toggle button visibility
+            updateToggleButton();
 
             showToast('已转换为 Flux 自然语言提示词!', 'success');
         } else {
@@ -401,6 +426,43 @@ async function convertToFluxPrompt() {
         if (btnIcon) btnIcon.style.display = 'inline';
         if (btnLoading) btnLoading.style.display = 'none';
         btn.disabled = false;
+    }
+}
+
+// Toggle between SD and Flux prompt formats
+function togglePromptFormat() {
+    if (!promptFormats.flux) {
+        showToast('请先生成 Flux 自然语言版本', 'warning');
+        return;
+    }
+
+    // Toggle format
+    currentPromptFormat = currentPromptFormat === 'sd' ? 'flux' : 'sd';
+
+    // Update display
+    const output = document.getElementById('promptOutput');
+    output.textContent = promptFormats[currentPromptFormat];
+
+    // Update toggle button
+    updateToggleButton();
+
+    // Show notification
+    const formatName = currentPromptFormat === 'sd' ? 'SD标签格式' : 'Flux自然语言格式';
+    showToast(`已切换到 ${formatName}`, 'info');
+}
+
+// Update toggle button visibility and state
+function updateToggleButton() {
+    const toggleBtn = document.getElementById('toggleFormatBtn');
+    if (!toggleBtn) return;
+
+    if (promptFormats.flux) {
+        toggleBtn.style.display = 'inline-flex';
+        toggleBtn.title = currentPromptFormat === 'sd'
+            ? '切换到 Flux 自然语言格式'
+            : '切换到 SD 标签格式';
+    } else {
+        toggleBtn.style.display = 'none';
     }
 }
 
