@@ -950,6 +950,33 @@ async function confirmImport() {
             // Add imported tags to local state
             result.tags.forEach(tag => tags.push(tag));
 
+            // Check if we should also add to selected tags
+            const includeSelected = document.getElementById('importIncludeSelected').checked;
+            if (includeSelected) {
+                // Add imported tags to selected tags
+                result.tags.forEach(tag => {
+                    // Check if tag is not already in selectedTags
+                    if (!selectedTags.some(t => t.id === tag.id)) {
+                        // Add to the end or after insert point
+                        if (insertAfterIndex >= 0 && insertAfterIndex < selectedTags.length) {
+                            selectedTags.splice(insertAfterIndex + 1, 0, tag);
+                            insertAfterIndex++;
+                        } else {
+                            selectedTags.push(tag);
+                        }
+                    }
+                });
+
+                // Update insert point to end
+                if (selectedTags.length > 0) {
+                    insertAfterIndex = selectedTags.length - 1;
+                }
+
+                // Update selected tags UI
+                renderSelectedTags();
+                generatePrompt();
+            }
+
             // Refresh UI
             renderTags();
             closeModal('importTagsModal');

@@ -327,6 +327,14 @@
                             <!-- Options loaded dynamically -->
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="importIncludeSelected" checked>
+                            <span class="toggle-switch"></span>
+                            <span class="toggle-text">同时插入已选标签</span>
+                        </label>
+                        <p class="form-hint">开启后，导入的标签将插入到标签库和已选标签列表；关闭则仅插入标签库</p>
+                    </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" onclick="closeModal('importTagsModal')">取消</button>
                         <button type="button" class="btn btn-primary" onclick="parseImportTags()" id="parseBtn">
